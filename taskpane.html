@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ModelForge</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',-apple-system,sans-serif;background:#f5f5f5;color:#18181b;font-size:13px;line-height:1.5}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e5e5}
+.header-left{display:flex;align-items:center;gap:8px}
+.logo{width:28px;height:28px;border-radius:6px;background:#0485f7;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.header-title{font-weight:600;font-size:14px}
+.status{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
+.status-text{color:#10b981}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e5e5e5}
+.tab{flex:1;padding:10px;text-align:center;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:#71717a;border-bottom:2px solid transparent;transition:all .2s}
+.tab.active{color:#0485f7;border-bottom-color:#0485f7;font-weight:600}
+.tab:hover:not(.active){color:#18181b}
+.tab-content{display:none}.tab-content.active{display:block}
+.section{padding:16px;border-bottom:1px solid #e5e5e5;background:#fff}
+.section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#71717a;margin-bottom:4px}
+.section-title{font-weight:600;font-size:14px}
+.section-sub{font-size:12px;color:#71717a}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:16px;background:#fff;border-bottom:1px solid #e5e5e5}
+.metric{background:#f5f5f5;border-radius:8px;padding:10px;text-align:center}
+.metric-label{font-size:10px;color:#71717a}
+.metric-value{font-size:16px;font-weight:700;margin-top:2px}
+.metric-value.green{color:#10b981}.metric-value.blue{color:#3b82f6}.metric-value.purple{color:#a855f7}
+.insight-section{padding:16px;background:#fff;border-bottom:1px solid #e5e5e5}
+.insight-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.insight-icon{color:#0485f7;font-size:14px}.insight-title{font-weight:600;font-size:12px}
+.insight-box{background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:8px;padding:10px;font-size:12px;color:#71717a;line-height:1.5}
+.actions{padding:16px;background:#fff;display:flex;flex-direction:column;gap:8px}
+.btn{width:100%;padding:10px 16px;border-radius:20px;border:none;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s}
+.btn:hover{opacity:.9}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#0485f7;color:#fff}.btn-secondary{background:#ebebec;color:#18181b}.btn-success{background:#10b981;color:#fff}
+.cell-list{padding:16px;background:#fff}.cell-list-title{font-weight:600;font-size:12px;margin-bottom:8px}
+.cell-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0}
+.cell-item:last-child{border-bottom:none}
+.cell-ref{background:rgba(4,133,247,.1);color:#0485f7;font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;font-family:'Cascadia Code','Fira Code',monospace}
+.cell-field{font-size:12px;font-weight:500;flex:1;margin-left:8px}
+.cell-value{font-size:12px;color:#71717a;font-family:'Cascadia Code',monospace}
+.ai-section{padding:16px;background:#fff}
+.ai-section h3{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ai-form{display:flex;flex-direction:column;gap:12px}
+.ai-form label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#71717a;margin-bottom:2px;display:block}
+.ai-form select,.ai-form input,.ai-form textarea{width:100%;padding:8px 12px;border:1px solid #e5e5e5;border-radius:8px;font-size:13px;font-family:inherit;background:#f5f5f5;color:#18181b;outline:none;transition:border-color .2s}
+.ai-form select:focus,.ai-form input:focus,.ai-form textarea:focus{border-color:#0485f7;background:#fff}
+.ai-form textarea{resize:vertical;min-height:80px}
+.ai-result{margin-top:12px;padding:12px;border-radius:8px;background:rgba(4,133,247,.05);border:1px solid rgba(4,133,247,.12);font-size:12px;line-height:1.5}
+.ai-result .result-title{font-weight:600;color:#0485f7;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.ai-result .result-info{color:#71717a}
+.ai-result .sheet-list{list-style:none;margin-top:8px;padding:0}
+.ai-result .sheet-list li{padding:4px 0;display:flex;align-items:center;gap:6px}
+.ai-result .sheet-list li::before{content:'';width:6px;height:6px;border-radius:50%;background:#10b981;flex-shrink:0}
+.spinner-small{width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+.training-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:12px;font-size:11px;font-weight:500;background:rgba(16,185,129,.1);color:#10b981;margin-bottom:8px}
+.engine-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(16,185,129,.08);color:#10b981}
+.pattern-card{background:#f5f5f5;border-radius:8px;padding:10px;margin-bottom:6px;font-size:12px}
+.pattern-card .pf{font-weight:600;color:#18181b;margin-bottom:2px}.pattern-card .pm{font-size:11px;color:#71717a}.pattern-card .ps{font-size:11px;color:#0485f7;margin-top:4px}
+#loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:12px}
+.spinner{width:32px;height:32px;border:3px solid #e5e5e5;border-top-color:#0485f7;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-text{font-size:13px;color:#71717a}
+#app{display:none}
+#error{display:none;padding:20px;text-align:center;color:#ef4444}
+</style>
+</head>
+<body>
+<div id="loading"><div class="spinner"></div><div id="loading-text">Connecting to Excel...</div></div>
+<div id="error"><p>Failed to initialize. If you opened this in a browser, it only works inside Excel. Sideload the manifest.xml first.</p></div>
+<div id="app">
+<div class="header"><div class="header-left"><div class="logo">MF</div><span class="header-title">ModelForge</span></div><div class="status"><div class="status-dot" id="statusDot"></div><span class="status-text" id="statusText">Connected</span></div></div>
+<div class="tabs"><button class="tab active" onclick="switchTab('sync')">Sync</button><button class="tab" onclick="switchTab('generate')">AI Generate</button></div>
+<div id="tab-sync" class="tab-content active">
+<div class="section"><div class="section-label">Active Model</div><div class="section-title" id="modelName">&mdash;</div><div class="section-sub" id="modelMeta">Detecting workbook...</div></div>
+<div class="metrics"><div class="metric"><div class="metric-label">IRR</div><div class="metric-value green" id="metricIRR">&mdash;</div></div><div class="metric"><div class="metric-label">MOIC</div><div class="metric-value blue" id="metricMOIC">&mdash;</div></div><div class="metric"><div class="metric-label">Equity In</div><div class="metric-value" id="metricEquityIn">&mdash;</div></div><div class="metric"><div class="metric-label">Equity Out</div><div class="metric-value purple" id="metricEquityOut">&mdash;</div></div></div>
+<div class="insight-section"><div class="insight-header"><span class="insight-icon">&#x1F9E0;</span><span class="insight-title">AI Insight</span></div><div class="insight-box" id="aiInsight">Analyzing your model assumptions...</div></div>
+<div class="cell-list"><div class="cell-list-title">Mapped Cells</div><div id="cellMappings"></div></div>
+<div class="actions"><button class="btn btn-primary" id="btnSync" onclick="syncToPlatform()">&#x1F504; Sync to Platform</button><button class="btn btn-secondary" id="btnRead" onclick="readAssumptions()">&#x1F4C4; Read Assumptions</button></div>
+</div>
+<div id="tab-generate" class="tab-content">
+<div class="ai-section"><h3>&#x1F9E0; AI Model Generator</h3><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;"><span class="engine-badge">GPT-5.2 &middot; reasoning: high</span></div><div class="training-badge" id="trainingBadge">Loading training data...</div><p style="font-size:12px;color:#71717a;margin-bottom:4px;line-height:1.5;">Models uploaded on the ModelForge web platform are parsed for real Excel patterns. Those patterns are automatically used here as context when generating.</p></div>
+<div class="ai-section" id="platformPatterns" style="border-top:1px solid #e5e5e5;display:none;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><span style="font-size:12px;font-weight:600;">Platform Training Data</span><button onclick="loadTrainingStatus()" style="font-size:10px;padding:3px 8px;border-radius:10px;border:1px solid #e5e5e5;background:#fff;cursor:pointer;">&#x1F504; Refresh</button></div><div id="patternList"></div></div>
+<div class="ai-section" style="border-top:1px solid #e5e5e5;"><div class="ai-form">
+<div><label>Model Type</label><select id="genModelType"><option value="LBO">LBO (Leveraged Buyout)</option><option value="DCF">DCF (Discounted Cash Flow)</option><option value="M&amp;A">M&amp;A (Merger Model)</option><option value="Comps">Comps (Comparable Analysis)</option><option value="3-Statement">3-Statement Model</option></select></div>
+<div><label>Company Name</label><input type="text" id="genCompanyName" placeholder="e.g. Acme Corp"></div>
+<div><label>Industry</label><input type="text" id="genIndustry" placeholder="e.g. Healthcare, Technology"></div>
+<div><label>Describe your model</label><textarea id="genPrompt" placeholder="e.g. Create an LBO model for a $500M healthcare services company with 15% revenue growth, 30% EBITDA margins, 5-year hold period targeting 25% IRR"></textarea></div>
+<button class="btn btn-primary" id="btnGenerate" onclick="generateModel()">&#x1F9E0; Generate Model</button>
+</div></div>
+<div id="genResult" style="display:none;"><div class="ai-section" style="border-top:1px solid #e5e5e5;"><div class="ai-result"><div class="result-title">&#x2705; <span id="genResultName">Model Generated</span></div><div class="result-info"><span id="genResultSheets">0</span> sheets &middot; <span id="genResultCells">0</span> cells &middot; <span id="genResultPatterns">0</span> training patterns used</div><ul class="sheet-list" id="genSheetList"></ul></div><div style="margin-top:12px;"><button class="btn btn-success" id="btnPopulate" onclick="populateWorkbook()">&#x1F4E5; Populate Current Workbook</button></div></div></div>
+</div>
+</div>
+<script>
+var API_BASE = "https://rwmxzasmtalgocuotfke.supabase.co/functions/v1/make-server-f3f66941";
+var AUTH_HEADERS = {"Content-Type":"application/json","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bXh6YXNtdGFsZ29jdW90ZmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMjk1MzYsImV4cCI6MjA4NjYwNTUzNn0.avix-4C1VBu0wJ-QZToWmkgq9jpHuQJu1axhQ4XDHyg"};
+var currentGenerated = null, currentCellData = null;
+
+function switchTab(n) {
+  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',(n==='sync'&&i===0)||(n==='generate'&&i===1));});
+  document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
+  document.getElementById('tab-'+n).classList.add('active');
+  if(n==='generate') loadTrainingStatus();
+}
+
+var CELL_MAP = [
+  {cell:"B3",field:"Purchase Price ($M)",key:"purchasePrice"},
+  {cell:"B4",field:"Entry Multiple",key:"entryMultiple"},
+  {cell:"B5",field:"Equity %",key:"equityPercent"},
+  {cell:"B8",field:"Base Revenue ($M)",key:"baseRevenue"},
+  {cell:"B9",field:"Revenue Growth",key:"revenueGrowth"},
+  {cell:"B10",field:"EBITDA Margin",key:"ebitdaMargin"},
+  {cell:"B13",field:"Senior Debt Multiple",key:"seniorMultiple"},
+  {cell:"B14",field:"Sub Debt Multiple",key:"subMultiple"},
+  {cell:"D18",field:"IRR (Output)",key:"irr",output:true},
+  {cell:"D19",field:"MOIC (Output)",key:"moic",output:true}
+];
+var currentValues = {};
+
+Office.onReady(function(info) {
+  console.log("[MF] Office.onReady fired, host=" + info.host);
+  if (info.host === Office.HostType.Excel) {
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    renderCellMappings(); readAssumptions(); setupChangeListener(); loadTrainingStatus(); checkConnection();
+  } else {
+    console.log("[MF] Not Excel host (" + info.host + "), showing UI anyway");
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    renderCellMappings(); checkConnection();
+  }
+});
+
+setTimeout(function() {
+  if (document.getElementById("loading").style.display !== "none") {
+    console.log("[MF] Timeout: Office.onReady did not fire, showing UI");
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    document.getElementById("statusText").textContent = "Browser Mode";
+    document.getElementById("statusDot").style.background = "#f59e0b";
+    renderCellMappings(); checkConnection();
+  }
+}, 5000);
+
+function checkConnection() {
+  if (!API_BASE) { document.getElementById("statusText").textContent = "No API"; document.getElementById("statusDot").style.background = "#f59e0b"; return; }
+  fetch(API_BASE + "/health", {headers: AUTH_HEADERS})
+  .then(function(r){return r.json();})
+  .then(function(d) {
+    if (d.status === "ok") { document.getElementById("statusText").textContent = "Connected"; document.getElementById("statusDot").style.background = "#10b981"; }
+  })
+  .catch(function() {
+    document.getElementById("statusText").textContent = "Offline";
+    document.getElementById("statusDot").style.background = "#ef4444";
+    document.getElementById("statusDot").style.animation = "none";
+  });
+}
+
+function loadTrainingStatus() {
+  if (!API_BASE) return;
+  fetch(API_BASE + "/ai/patterns", {headers: AUTH_HEADERS})
+  .then(function(r){return r.json();})
+  .then(function(data) {
+    var badge = document.getElementById("trainingBadge");
+    var sec = document.getElementById("platformPatterns");
+    var list = document.getElementById("patternList");
+    var count = data.count || 0, patterns = data.patterns || [];
+    if (count > 0) {
+      badge.textContent = "\u2705 " + count + " pattern" + (count > 1 ? "s" : "") + " from platform uploads";
+      badge.style.background = "rgba(16,185,129,0.1)"; badge.style.color = "#10b981";
+      sec.style.display = "block"; var html = "";
+      patterns.slice(0, 5).forEach(function(p) {
+        var isReal = p.isRealParse === true;
+        html += '<div class="pattern-card"><div class="pf">' + (p.sourceFile || "Unknown") + '</div>';
+        html += '<div class="pm">' + (p.modelType || "LBO") + (isReal ? " \u00b7 Real XLSX parse" : " \u00b7 Template") + '</div>';
+        if (p.workbook && p.workbook.sheetNames) html += '<div class="ps">Sheets: ' + p.workbook.sheetNames.join(", ") + '</div>';
+        else if (p.schema && p.schema.sheetNames) html += '<div class="ps">Sheets: ' + p.schema.sheetNames.join(", ") + '</div>';
+        if (isReal && p.workbook) html += '<div class="pm">' + (p.workbook.totalFormulas || 0) + " formulas \u00b7 " + (p.workbook.totalCells || 0) + ' cells</div>';
+        html += "</div>";
+      });
+      if (count > 5) html += '<div style="font-size:11px;color:#71717a;text-align:center">+ ' + (count - 5) + " more</div>";
+      list.innerHTML = html;
+    } else {
+      badge.textContent = "\u26a0 No training patterns yet"; badge.style.background = "rgba(245,158,11,0.1)"; badge.style.color = "#f59e0b";
+      sec.style.display = "block";
+      list.innerHTML = '<div style="font-size:12px;color:#71717a;text-align:center;padding:12px">Upload Excel models on the ModelForge web platform to train the AI. They will appear here automatically.</div>';
+    }
+  })
+  .catch(function(err) {
+    console.log("Training status error:", err);
+    var badge = document.getElementById("trainingBadge");
+    badge.textContent = "\u26a0 Could not connect to platform"; badge.style.background = "rgba(239,68,68,0.1)"; badge.style.color = "#ef4444";
+  });
+}
+
+function renderCellMappings() {
+  var c = document.getElementById("cellMappings");
+  c.innerHTML = CELL_MAP.map(function(m){ return '<div class="cell-item"><span class="cell-ref">' + m.cell + '</span><span class="cell-field">' + m.field + '</span><span class="cell-value" id="val_' + m.key + '">&mdash;</span></div>'; }).join("");
+}
+
+function readAssumptions() {
+  if (typeof Excel === "undefined") return;
+  Excel.run(function(ctx) {
+    var sh = ctx.workbook.worksheets.getActiveWorksheet(); var rng = {};
+    CELL_MAP.forEach(function(m){ rng[m.key] = sh.getRange(m.cell); rng[m.key].load("values"); });
+    return ctx.sync().then(function() {
+      CELL_MAP.forEach(function(m){ var v = rng[m.key].values[0][0]; currentValues[m.key] = v; var el = document.getElementById("val_" + m.key); if (el) el.textContent = v != null && v !== "" ? String(v) : "\u2014"; });
+      updateMetrics(); updateModelInfo();
+    });
+  }).catch(function(e){ console.error("Read error:", e); });
+}
+
+function updateMetrics() {
+  var irr = currentValues.irr, moic = currentValues.moic;
+  var eqIn = currentValues.purchasePrice && currentValues.equityPercent ? (currentValues.purchasePrice * currentValues.equityPercent / 100) : null;
+  document.getElementById("metricIRR").textContent = irr != null ? (typeof irr === "number" ? irr.toFixed(1) + "%" : String(irr)) : "\u2014";
+  document.getElementById("metricMOIC").textContent = moic != null ? (typeof moic === "number" ? moic.toFixed(2) + "x" : String(moic)) : "\u2014";
+  document.getElementById("metricEquityIn").textContent = eqIn != null ? "$" + eqIn.toFixed(0) + "M" : "\u2014";
+  document.getElementById("metricEquityOut").textContent = moic != null && eqIn != null ? "$" + (eqIn * moic).toFixed(0) + "M" : "\u2014";
+  if (currentValues.entryMultiple && currentValues.revenueGrowth) {
+    var m = currentValues.entryMultiple, g = currentValues.revenueGrowth;
+    var ins = "Entry multiple of " + m + "x " + (m < 8.2 ? "is below sector median (8.2x) \u2014 attractive entry. " : "is above sector median (8.2x) \u2014 consider negotiating. ");
+    if (typeof g === "number" && g > 10) ins += "Revenue growth of " + (g * 100 >= 1 ? g : (g * 100).toFixed(0) + "%") + " is in top quartile.";
+    document.getElementById("aiInsight").textContent = ins;
+  }
+}
+
+function updateModelInfo() {
+  if (typeof Excel === "undefined") return;
+  Excel.run(function(ctx) {
+    var wb = ctx.workbook; wb.load("name");
+    return ctx.sync().then(function() {
+      var n = wb.name || "Unknown Workbook";
+      document.getElementById("modelName").textContent = n.replace(/\.(xlsx?|xlsm)$/i, "").replace(/_/g, " ");
+      document.getElementById("modelMeta").textContent = n + " \u00b7 v1";
+    });
+  }).catch(function(){});
+}
+
+function setupChangeListener() {
+  if (typeof Excel === "undefined") return;
+  Excel.run(function(ctx) {
+    var sh = ctx.workbook.worksheets.getActiveWorksheet();
+    sh.onChanged.add(function(){ readAssumptions(); });
+    return ctx.sync();
+  }).catch(function(e){ console.log("Listener setup:", e); });
+}
+
+function syncToPlatform() {
+  if (!API_BASE) { alert("API not configured."); return; }
+  var btn = document.getElementById("btnSync"); btn.textContent = "Syncing..."; btn.disabled = true;
+  var a = {}; CELL_MAP.forEach(function(m){ if (!m.output) a[m.key] = currentValues[m.key]; });
+  fetch(API_BASE + "/models", { method:"POST", headers:AUTH_HEADERS, body:JSON.stringify({
+    id:"excel-sync-"+Date.now(), name:document.getElementById("modelName").textContent||"Excel Model",
+    type:"LBO", deal:"Excel Sync", assumptions:a, status:"In Progress", assignee:"XL", assigneeName:"Excel User"
+  })})
+  .then(function(r){return r.json();})
+  .then(function(){ btn.innerHTML = "&#x2705; Synced!"; setTimeout(function(){ btn.innerHTML = "&#x1F504; Sync to Platform"; btn.disabled = false; }, 2000); })
+  .catch(function(e){ console.error("Sync error:", e); btn.innerHTML = "&#x274C; Sync Failed"; setTimeout(function(){ btn.innerHTML = "&#x1F504; Sync to Platform"; btn.disabled = false; }, 2000); });
+}
+
+function generateModel() {
+  if (!API_BASE) { alert("API not configured."); return; }
+  var btn = document.getElementById("btnGenerate");
+  var prompt = document.getElementById("genPrompt").value;
+  var modelType = document.getElementById("genModelType").value;
+  var companyName = document.getElementById("genCompanyName").value;
+  var industry = document.getElementById("genIndustry").value;
+  if (!prompt.trim()) { alert("Please describe the model you want to generate."); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner-small"></span> Generating with GPT-5.2...';
+  document.getElementById("genResult").style.display = "none";
+  fetch(API_BASE + "/ai/generate", { method:"POST", headers:AUTH_HEADERS, body:JSON.stringify({
+    prompt:prompt, modelType:modelType, companyName:companyName||undefined, industry:industry||undefined
+  })})
+  .then(function(r){return r.json();})
+  .then(function(data) {
+    if (data.error) throw new Error(data.error);
+    currentGenerated = data.model; currentCellData = data.cellData;
+    document.getElementById("genResultName").textContent = data.model.name;
+    document.getElementById("genResultSheets").textContent = data.model.sheets ? data.model.sheets.length : 0;
+    document.getElementById("genResultCells").textContent = data.cellData ? data.cellData.length : 0;
+    document.getElementById("genResultPatterns").textContent = data.model.metadata ? data.model.metadata.patternsUsed : 0;
+    var sl = document.getElementById("genSheetList");
+    if (data.model.sheets) { sl.innerHTML = data.model.sheets.map(function(s){ return '<li>' + s.name + ' <span style="color:#71717a;font-size:11px">(' + (s.rows ? s.rows.length : 0) + ' rows)</span></li>'; }).join(''); }
+    document.getElementById("genResult").style.display = "block";
+    btn.innerHTML = "&#x1F9E0; Generate Model"; btn.disabled = false;
+  })
+  .catch(function(err) {
+    console.error("Generation error:", err); alert("Model generation failed: " + err.message);
+    btn.innerHTML = "&#x1F9E0; Generate Model"; btn.disabled = false;
+  });
+}
+
+function populateWorkbook() {
+  if (!currentGenerated || !currentCellData || currentCellData.length === 0) { alert("No generated model data to populate."); return; }
+  if (typeof Excel === "undefined") { alert("Excel API not available. Open this inside Excel."); return; }
+  var btn = document.getElementById("btnPopulate"); btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-small" style="border-color:#fff;border-top-color:transparent"></span> Populating...';
+  Excel.run(function(ctx) {
+    var wb = ctx.workbook; var sg = {};
+    currentCellData.forEach(function(c){ if (!sg[c.sheet]) sg[c.sheet] = []; sg[c.sheet].push(c); });
+    var sn = Object.keys(sg);
+    sn.forEach(function(name, idx) {
+      var ws;
+      if (idx === 0) { ws = wb.worksheets.getActiveWorksheet(); ws.name = name; }
+      else { ws = wb.worksheets.add(name); }
+      sg[name].forEach(function(cell) {
+        var r = ws.getRange(cell.cell);
+        if (cell.value != null) r.values = [[cell.value]];
+        if (cell.bold) r.format.font.bold = true;
+        if (cell.format === "currency") r.numberFormat = [["$#,##0"]];
+        else if (cell.format === "percent") r.numberFormat = [["0.0%"]];
+        else if (cell.format === "multiple") r.numberFormat = [["0.0x"]];
+      });
+    });
+    if (sn.length > 0) wb.worksheets.getItem(sn[0]).activate();
+    return ctx.sync();
+  })
+  .then(function() {
+    btn.innerHTML = "&#x2705; Workbook Populated!";
+    setTimeout(function(){ btn.innerHTML = "&#x1F4E5; Populate Current Workbook"; btn.disabled = false; }, 3000);
+    if (API_BASE) {
+      fetch(API_BASE + "/models", { method:"POST", headers:AUTH_HEADERS, body:JSON.stringify({
+        id:currentGenerated.id || ("ai-gen-" + Date.now()), name:currentGenerated.name, type:currentGenerated.type,
+        deal:"AI Generated", assumptions:currentGenerated.assumptions || {}, status:"In Progress", assignee:"AI", assigneeName:"AI Engine"
+      })}).catch(function(){});
+    }
+  })
+  .catch(function(err) {
+    console.error("Populate error:", err); alert("Failed to populate workbook: " + err.message);
+    btn.innerHTML = "&#x1F4E5; Populate Current Workbook"; btn.disabled = false;
+  });
+}
+</script>
+</body>
+</html>

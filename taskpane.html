@@ -11,33 +11,40 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-sans:'Inter',sans-serif;
   --font-mono:'Inter',monospace;
   --background:rgba(245,245,245,1);
   --foreground:rgba(24,24,27,1);
   --card:rgba(255,255,255,1);
   --card-foreground:rgba(24,24,27,1);
+  --popover:rgba(255,255,255,1);
+  --popover-foreground:rgba(24,24,27,1);
   --primary:rgba(4,133,247,1);
   --primary-foreground:rgba(252,252,252,1);
   --secondary:rgba(235,235,236,1);
   --secondary-foreground:rgba(24,24,27,1);
   --muted:rgba(229,229,229,1);
   --muted-foreground:rgba(113,113,122,1);
+  --accent:rgba(4,133,247,1);
+  --accent-foreground:rgba(252,252,252,1);
   --destructive:rgba(255,56,60,1);
   --destructive-foreground:rgba(252,252,252,1);
   --border:rgba(0,0,0,0);
+  --input:rgba(255,255,255,1);
   --input-background:rgba(255,255,255,1);
   --ring:rgba(4,133,247,1);
   --chart-1:rgba(59,130,246,1);
   --chart-2:rgba(16,185,129,1);
   --chart-3:rgba(245,158,11,1);
+  --chart-4:rgba(239,68,68,1);
   --chart-5:rgba(168,85,247,1);
   --radius:12px;
   --radius-button:24px;
   --radius-card:24px;
   --elevation-sm:0px 2px 4px 0px rgba(0,0,0,0.04),0px 1px 2px 0px rgba(0,0,0,0.06),0px 0px 1px 0px rgba(0,0,0,0.06);
-  --text-3xs:10px;--text-2xs:11px;--text-xs:12px;--text-sm:14px;--text-base:16px;--text-lg:16px;
-  --font-weight-normal:400;--font-weight-medium:500;--font-weight-semi-bold:600;--font-weight-bold:700;--font-weight-extra-bold:800;
+  --text-3xl:36px;--text-2xl:24px;--text-xl:20px;--text-lg:16px;--text-base:16px;--text-sm:14px;
+  --text-xs:12px;--text-2xs:11px;--text-3xs:10px;
+  --font-weight-extra-bold:800;--font-weight-bold:700;--font-weight-semi-bold:600;--font-weight-medium:500;--font-weight-normal:400;
   /* --border is transparent in the design system; use --border-line for visible separators */
   --border-line:var(--secondary)
 }
@@ -228,7 +235,9 @@ body{font-family:var(--font-sans);background:var(--background);color:var(--foreg
 //<![CDATA[
 var API_BASE = "https://rwmxzasmtalgocuotfke.supabase.co/functions/v1/make-server-f3f66941";
 var ANON_KEY = "sb_publishable_6HdSzr_3F8ls_dcoI71Nkg_5xcukxDh";
-var AUTH = { "Content-Type": "application/json", "Authorization": "Bearer sb_publishable_6HdSzr_3F8ls_dcoI71Nkg_5xcukxDh" };
+var AUTH = { "Content-Type": "application/json", "Authorization": "Bearer sb_publishable_6HdSzr_3F8ls_dcoI71Nkg_5xcukxDh", "apikey": "sb_publishable_6HdSzr_3F8ls_dcoI71Nkg_5xcukxDh" };
+// Helper: append apikey as query param (fallback for relay auth)
+function apiUrl(path) { var u = API_BASE + path; var sep = u.indexOf("?") > -1 ? "&" : "?"; return u + sep + "apikey=" + encodeURIComponent(ANON_KEY); }
 var isRunning = false;
 var sheetIdMap = {};
 var sheetIdCounter = 0;
@@ -253,7 +262,7 @@ function saveConversations() {
   } catch(e) { console.error("Save error:", e); }
 }
 function loadServerSessions() {
-  fetch(API_BASE + "/ai/agent/sessions", { headers: AUTH })
+  fetch(apiUrl("/ai/agent/sessions"), { headers: AUTH })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var sessions = data.sessions || [];
@@ -295,7 +304,7 @@ function switchConversation(convId) {
   activeConvId = convId;
   var conv = getActiveConv();
   if (conv && conv.serverOnly && conv.messages.length === 0 && conv.sessionId) {
-    fetch(API_BASE + "/ai/agent/sessions/" + conv.sessionId, { headers: AUTH })
+    fetch(apiUrl("/ai/agent/sessions/" + conv.sessionId), { headers: AUTH })
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.messages) {
@@ -332,7 +341,7 @@ function deleteConversation(convId, evt) {
     activeConvId = conversations.length ? conversations[0].id : null;
   }
   if (conv && conv.sessionId) {
-    fetch(API_BASE + "/ai/agent/sessions/" + conv.sessionId, {
+    fetch(apiUrl("/ai/agent/sessions/" + conv.sessionId), {
       method: "DELETE", headers: AUTH
     }).catch(function(){});
   }
@@ -769,7 +778,7 @@ function setupDragDrop() {
 async function uploadFileForContext(file) {
   var formData = new FormData(); formData.append("file", file);
   try {
-    var resp = await fetch(API_BASE + "/ai/agent/upload", { method: "POST", headers: { "Authorization": "Bearer " + ANON_KEY }, body: formData });
+    var resp = await fetch(apiUrl("/ai/agent/upload"), { method: "POST", headers: { "Authorization": "Bearer " + ANON_KEY, "apikey": ANON_KEY }, body: formData });
     var data = await resp.json(); if (data.success) return data.extractedContent;
     console.error("File upload error:", data.error); return "[Failed to parse file: " + file.name + "]";
   } catch(err) { console.error("File upload error:", err); return "[Upload error for " + file.name + ": " + err.message + "]"; }
@@ -811,7 +820,7 @@ async function sendMessage() {
   try { wbContext = await getWorkbookMetadata(); } catch(e) { console.error("Metadata error:", e); }
   addThinking();
   try {
-    var resp = await fetch(API_BASE + "/ai/agent", { method: "POST", headers: AUTH,
+    var resp = await fetch(apiUrl("/ai/agent"), { method: "POST", headers: AUTH,
       body: JSON.stringify({ sessionId: conv.sessionId, workbookContext: wbContext, prompt: fullPrompt, modelType: detectModelType(prompt) })
     }).then(function(r){return r.json()});
     conv.sessionId = resp.sessionId || conv.sessionId; saveConversations();
@@ -831,7 +840,7 @@ async function sendMessage() {
         }
       }
       addThinking(); saveConversations();
-      resp = await fetch(API_BASE + "/ai/agent/continue", { method: "POST", headers: AUTH,
+      resp = await fetch(apiUrl("/ai/agent/continue"), { method: "POST", headers: AUTH,
         body: JSON.stringify({ sessionId: conv.sessionId, toolResults: toolResults })
       }).then(function(r){return r.json()});
     }
@@ -851,7 +860,7 @@ function detectModelType(prompt) { var p = prompt.toLowerCase();
   return null;
 }
 function checkConnection() {
-  fetch(API_BASE + "/health", { headers: AUTH }).then(function(r){return r.json()}).then(function(d) {
+  fetch(apiUrl("/health"), { headers: AUTH }).then(function(r){return r.json()}).then(function(d) {
     if (d.status === "ok") { document.getElementById("statusPill").className = "status-pill online"; document.getElementById("statusText").textContent = "Online"; }
   }).catch(function() { document.getElementById("statusPill").className = "status-pill offline"; document.getElementById("statusText").textContent = "Offline"; });
 }

@@ -1,163 +1,162 @@
-<!DOCTYPE html>
-<html lang="en">
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ModelForge Agent</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-
-/* ── Design tokens from CSS variables (Inter only) ───── */
 :root{
-  --bg:#f5f5f5;--fg:#18181b;--card:#fff;--muted:#71717a;--border:#e5e5e5;
-  --blue:#0485f7;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--purple:#a855f7;
-  --radius:10px;--radius-lg:14px;--radius-pill:20px;
-  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --fw-normal:400;--fw-medium:500;--fw-semibold:600;--fw-bold:700;--fw-extrabold:800;
-  --text-3xs:10px;--text-2xs:11px;--text-xs:12px;--text-sm:13px;--text-base:14px;--text-lg:16px
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --background:rgba(245,245,245,1);
+  --foreground:rgba(24,24,27,1);
+  --card:rgba(255,255,255,1);
+  --card-foreground:rgba(24,24,27,1);
+  --primary:rgba(4,133,247,1);
+  --primary-foreground:rgba(252,252,252,1);
+  --secondary:rgba(235,235,236,1);
+  --secondary-foreground:rgba(24,24,27,1);
+  --muted:rgba(229,229,229,1);
+  --muted-foreground:rgba(113,113,122,1);
+  --destructive:rgba(255,56,60,1);
+  --destructive-foreground:rgba(252,252,252,1);
+  --border:rgba(229,229,229,1);
+  --input-background:rgba(255,255,255,1);
+  --ring:rgba(4,133,247,1);
+  --success:rgba(16,185,129,1);
+  --warning:rgba(245,158,11,1);
+  --chart-5:rgba(168,85,247,1);
+  --radius:12px;
+  --radius-button:24px;
+  --radius-card:24px;
+  --elevation-sm:0px 2px 4px 0px rgba(0,0,0,0.04),0px 1px 2px 0px rgba(0,0,0,0.06),0px 0px 1px 0px rgba(0,0,0,0.06);
+  --text-3xs:10px;--text-2xs:11px;--text-xs:12px;--text-sm:14px;--text-base:16px;--text-lg:16px;
+  --fw-normal:400;--fw-medium:500;--fw-semibold:600;--fw-bold:700;--fw-extrabold:800
 }
-body{font-family:var(--font);background:var(--bg);color:var(--fg);font-size:var(--text-sm);line-height:1.5;overflow:hidden;height:100vh;display:flex}
+body{font-family:var(--font-sans);background:var(--background);color:var(--foreground);font-size:13px;line-height:1.5;overflow:hidden;height:100vh;display:flex}
 
-/* ── Sidebar: Chat History ───────────────────────────── */
 .sidebar{width:0;min-width:0;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .25s ease,min-width .25s ease;flex-shrink:0}
 .sidebar.open{width:240px;min-width:240px}
 .sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-.sidebar-title{font-weight:var(--fw-bold);font-size:var(--text-sm);font-family:var(--font);white-space:nowrap}
+.sidebar-title{font-weight:var(--fw-bold);font-size:var(--text-sm);font-family:var(--font-sans);white-space:nowrap}
 .sidebar-actions{display:flex;gap:6px}
-.sidebar-btn{width:28px;height:28px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s}
-.sidebar-btn:hover{border-color:var(--blue);color:var(--blue)}
+.sidebar-btn{width:28px;height:28px;border-radius:calc(var(--radius) - 4px);border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted-foreground);transition:all .15s}
+.sidebar-btn:hover{border-color:var(--primary);color:var(--primary)}
 .sidebar-list{flex:1;overflow-y:auto;padding:8px}
-.conv-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;transition:all .12s;margin-bottom:2px;position:relative}
+.conv-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:calc(var(--radius) - 4px);cursor:pointer;transition:all .12s;margin-bottom:2px;position:relative}
 .conv-item:hover{background:rgba(4,133,247,.06)}
 .conv-item.active{background:rgba(4,133,247,.1)}
-.conv-item .conv-icon{width:28px;height:28px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:var(--text-xs)}
+.conv-item .conv-icon{width:28px;height:28px;border-radius:calc(var(--radius) - 4px);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:var(--text-xs)}
 .conv-item .conv-info{flex:1;min-width:0}
-.conv-item .conv-title{font-size:var(--text-xs);font-weight:var(--fw-semibold);font-family:var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.conv-item .conv-meta{font-size:var(--text-3xs);color:var(--muted);font-family:var(--font)}
-.conv-delete{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;border:none;background:transparent;color:var(--muted);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:10px}
+.conv-item .conv-title{font-size:var(--text-xs);font-weight:var(--fw-semibold);font-family:var(--font-sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-item .conv-meta{font-size:var(--text-3xs);color:var(--muted-foreground);font-family:var(--font-sans)}
+.conv-delete{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;border:none;background:transparent;color:var(--muted-foreground);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:10px}
 .conv-item:hover .conv-delete{display:flex}
-.conv-delete:hover{background:rgba(239,68,68,.1);color:var(--red)}
+.conv-delete:hover{background:rgba(255,56,60,.1);color:var(--destructive)}
 
-/* ── Main Panel ──────────────────────────────────────── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-
-/* Header */
 .header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
 .header-left{display:flex;align-items:center;gap:8px}
-.btn-menu{width:30px;height:30px;border-radius:var(--radius);border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--fg);transition:all .15s}
-.btn-menu:hover{border-color:var(--blue);color:var(--blue)}
-.logo{width:26px;height:26px;border-radius:7px;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:var(--fw-extrabold);font-size:var(--text-2xs);font-family:var(--font)}
-.header-title{font-weight:var(--fw-bold);font-size:var(--text-base);font-family:var(--font);letter-spacing:-0.02em}
-.status-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:var(--radius-pill);font-size:var(--text-3xs);font-weight:var(--fw-semibold);font-family:var(--font)}
-.status-pill.online{background:rgba(16,185,129,.1);color:var(--green)}
-.status-pill.offline{background:rgba(239,68,68,.1);color:var(--red)}
+.btn-menu{width:30px;height:30px;border-radius:calc(var(--radius) - 4px);border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--foreground);transition:all .15s}
+.btn-menu:hover{border-color:var(--primary);color:var(--primary)}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:var(--primary-foreground);font-weight:var(--fw-extrabold);font-size:var(--text-2xs);font-family:var(--font-sans)}
+.header-title{font-weight:var(--fw-bold);font-size:var(--text-sm);font-family:var(--font-sans);letter-spacing:-0.02em}
+.status-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:var(--radius-button);font-size:var(--text-3xs);font-weight:var(--fw-semibold);font-family:var(--font-sans)}
+.status-pill.online{background:rgba(16,185,129,.1);color:var(--success)}
+.status-pill.offline{background:rgba(255,56,60,.1);color:var(--destructive)}
 .status-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
 
-/* Quick chips */
 .quick-row{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--card)}
-.quick-chip{padding:4px 10px;border-radius:var(--radius-pill);font-size:var(--text-2xs);font-weight:var(--fw-semibold);cursor:pointer;border:1.5px solid var(--border);background:var(--card);white-space:nowrap;transition:all .15s;color:var(--fg);font-family:var(--font)}
-.quick-chip:hover{border-color:var(--blue);color:var(--blue)}
-.quick-chip.active{border-color:var(--blue);background:rgba(4,133,247,.06);color:var(--blue)}
+.quick-chip{padding:4px 10px;border-radius:var(--radius-button);font-size:var(--text-2xs);font-weight:var(--fw-semibold);cursor:pointer;border:1.5px solid var(--border);background:var(--card);white-space:nowrap;transition:all .15s;color:var(--foreground);font-family:var(--font-sans)}
+.quick-chip:hover{border-color:var(--primary);color:var(--primary)}
+.quick-chip.active{border-color:var(--primary);background:rgba(4,133,247,.06);color:var(--primary)}
 
-/* Chat area */
 .chat-area{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-.chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;color:var(--muted)}
-.chat-empty-icon{width:44px;height:44px;border-radius:var(--radius-lg);background:rgba(4,133,247,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
-.chat-empty h3{font-size:var(--text-base);font-weight:var(--fw-bold);color:var(--fg);font-family:var(--font)}
-.chat-empty p{font-size:var(--text-2xs);max-width:260px;line-height:1.5;font-family:var(--font)}
+.chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;color:var(--muted-foreground)}
+.chat-empty-icon{width:44px;height:44px;border-radius:calc(var(--radius) - 2px);background:rgba(4,133,247,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 4px}
+.chat-empty h3{font-size:var(--text-sm);font-weight:var(--fw-bold);color:var(--foreground);font-family:var(--font-sans)}
+.chat-empty p{font-size:var(--text-2xs);max-width:260px;line-height:1.5;font-family:var(--font-sans)}
 
-/* Messages */
 .msg{max-width:92%;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .msg.user{align-self:flex-end}
 .msg.assistant{align-self:flex-start}
-.msg-bubble{padding:10px 14px;border-radius:var(--radius-lg);font-size:var(--text-xs);line-height:1.55;word-break:break-word;font-family:var(--font)}
-.msg.user .msg-bubble{background:var(--blue);color:#fff;border-bottom-right-radius:4px}
-.msg.assistant .msg-bubble{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--fg)}
+.msg-bubble{padding:10px 14px;border-radius:calc(var(--radius) - 2px);font-size:var(--text-xs);line-height:1.55;word-break:break-word;font-family:var(--font-sans)}
+.msg.user .msg-bubble{background:var(--primary);color:var(--primary-foreground);border-bottom-right-radius:4px}
+.msg.assistant .msg-bubble{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--foreground)}
 
-/* File attachment in message */
-.msg-attachment{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(4,133,247,.06);border:1px solid rgba(4,133,247,.15);border-radius:var(--radius);margin-bottom:6px;font-size:var(--text-2xs);font-family:var(--font)}
+.msg-attachment{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(4,133,247,.06);border:1px solid rgba(4,133,247,.15);border-radius:calc(var(--radius) - 4px);margin-bottom:6px;font-size:var(--text-2xs);font-family:var(--font-sans)}
 .msg-attachment .file-icon{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px}
-.msg-attachment .file-icon.xlsx{background:rgba(16,185,129,.12);color:var(--green)}
-.msg-attachment .file-icon.csv{background:rgba(59,130,246,.12);color:#3b82f6}
-.msg-attachment .file-icon.other{background:rgba(113,113,122,.1);color:var(--muted)}
-.msg-attachment .file-name{font-weight:var(--fw-semibold);color:var(--fg);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.msg-attachment .file-size{color:var(--muted);font-size:var(--text-3xs);flex-shrink:0}
+.msg-attachment .file-icon.xlsx{background:rgba(16,185,129,.12);color:var(--success)}
+.msg-attachment .file-icon.csv{background:rgba(59,130,246,.12);color:rgba(59,130,246,1)}
+.msg-attachment .file-icon.other{background:rgba(113,113,122,.1);color:var(--muted-foreground)}
+.msg-attachment .file-name{font-weight:var(--fw-semibold);color:var(--foreground);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg-attachment .file-size{color:var(--muted-foreground);font-size:var(--text-3xs);flex-shrink:0}
 
-/* Tool calls */
-.tool-call{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;margin:4px 0;font-size:var(--text-2xs);font-family:var(--font)}
+.tool-call{background:var(--card);border:1px solid var(--border);border-radius:calc(var(--radius) - 4px);padding:8px 12px;margin:4px 0;font-size:var(--text-2xs);font-family:var(--font-sans)}
 .tool-call-header{display:flex;align-items:center;gap:6px;margin-bottom:3px}
-.tool-call-name{font-weight:var(--fw-bold);font-size:var(--text-2xs);color:var(--fg);font-family:var(--font)}
-.tool-call-status{font-size:var(--text-3xs);font-weight:var(--fw-semibold);padding:2px 6px;border-radius:var(--radius-pill);font-family:var(--font)}
-.tool-call-status.running{background:rgba(4,133,247,.1);color:var(--blue)}
-.tool-call-status.done{background:rgba(16,185,129,.1);color:var(--green)}
-.tool-call-status.error{background:rgba(239,68,68,.1);color:var(--red)}
-.tool-call-detail{font-size:var(--text-3xs);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-family:var(--font)}
+.tool-call-name{font-weight:var(--fw-bold);font-size:var(--text-2xs);color:var(--foreground);font-family:var(--font-sans)}
+.tool-call-status{font-size:var(--text-3xs);font-weight:var(--fw-semibold);padding:2px 6px;border-radius:var(--radius-button);font-family:var(--font-sans)}
+.tool-call-status.running{background:rgba(4,133,247,.1);color:var(--primary)}
+.tool-call-status.done{background:rgba(16,185,129,.1);color:var(--success)}
+.tool-call-status.error{background:rgba(255,56,60,.1);color:var(--destructive)}
+.tool-call-detail{font-size:var(--text-3xs);color:var(--muted-foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-family:var(--font-sans)}
 
-/* Thinking indicator */
-.thinking{display:flex;align-items:center;gap:8px;padding:10px 14px;color:var(--muted);font-size:var(--text-xs);align-self:flex-start;font-family:var(--font)}
+.thinking{display:flex;align-items:center;gap:8px;padding:10px 14px;color:var(--muted-foreground);font-size:var(--text-xs);align-self:flex-start;font-family:var(--font-sans)}
 .thinking-dots{display:flex;gap:3px}
-.thinking-dots span{width:5px;height:5px;border-radius:50%;background:var(--blue);animation:bounce .6s infinite alternate}
+.thinking-dots span{width:5px;height:5px;border-radius:50%;background:var(--primary);animation:bounce .6s infinite alternate}
 .thinking-dots span:nth-child(2){animation-delay:.15s}
 .thinking-dots span:nth-child(3){animation-delay:.3s}
 @keyframes bounce{to{opacity:.3;transform:translateY(-3px)}}
 
-/* ── Input area with file upload ─────────────────────── */
 .input-area{padding:10px 14px;background:var(--card);border-top:1px solid var(--border);flex-shrink:0}
-
-/* File preview bar */
 .file-preview-bar{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
-.file-preview{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);font-size:var(--text-2xs);font-family:var(--font);animation:fadeIn .2s ease}
+.file-preview{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--background);border:1px solid var(--border);border-radius:calc(var(--radius) - 4px);font-size:var(--text-2xs);font-family:var(--font-sans);animation:fadeIn .2s ease}
 .file-preview .fp-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
-.file-preview .fp-icon.xlsx{background:rgba(16,185,129,.12);color:var(--green)}
-.file-preview .fp-icon.csv{background:rgba(59,130,246,.12);color:#3b82f6}
-.file-preview .fp-icon.other{background:rgba(113,113,122,.1);color:var(--muted)}
+.file-preview .fp-icon.xlsx{background:rgba(16,185,129,.12);color:var(--success)}
+.file-preview .fp-icon.csv{background:rgba(59,130,246,.12);color:rgba(59,130,246,1)}
+.file-preview .fp-icon.other{background:rgba(113,113,122,.1);color:var(--muted-foreground)}
 .file-preview .fp-name{font-weight:var(--fw-medium);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-preview .fp-size{color:var(--muted);font-size:var(--text-3xs)}
-.file-preview .fp-remove{width:16px;height:16px;border-radius:50%;border:none;background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .12s}
-.file-preview .fp-remove:hover{background:rgba(239,68,68,.1);color:var(--red)}
+.file-preview .fp-size{color:var(--muted-foreground);font-size:var(--text-3xs)}
+.file-preview .fp-remove{width:16px;height:16px;border-radius:50%;border:none;background:transparent;color:var(--muted-foreground);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .12s}
+.file-preview .fp-remove:hover{background:rgba(255,56,60,.1);color:var(--destructive)}
 
 .input-row{display:flex;gap:6px;align-items:flex-end}
-.btn-attach{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:all .15s;flex-shrink:0}
-.btn-attach:hover{border-color:var(--blue);color:var(--blue)}
-.btn-attach.has-files{border-color:var(--blue);color:var(--blue);background:rgba(4,133,247,.06)}
-.input-field{flex:1;border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 12px;font-size:var(--text-sm);font-family:var(--font);font-weight:var(--fw-normal);resize:none;background:var(--bg);color:var(--fg);outline:none;min-height:36px;max-height:120px;line-height:1.4;transition:border-color .15s}
-.input-field:focus{border-color:var(--blue);background:var(--card)}
-.input-field::placeholder{color:var(--muted)}
-.btn-send{width:36px;height:36px;border-radius:50%;border:none;background:var(--blue);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.btn-attach{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted-foreground);transition:all .15s;flex-shrink:0}
+.btn-attach:hover{border-color:var(--primary);color:var(--primary)}
+.btn-attach.has-files{border-color:var(--primary);color:var(--primary);background:rgba(4,133,247,.06)}
+.input-field{flex:1;border:1.5px solid var(--border);border-radius:calc(var(--radius) - 2px);padding:8px 12px;font-size:13px;font-family:var(--font-sans);font-weight:var(--fw-normal);resize:none;background:var(--background);color:var(--foreground);outline:none;min-height:36px;max-height:120px;line-height:1.4;transition:border-color .15s}
+.input-field:focus{border-color:var(--primary);background:var(--card)}
+.input-field::placeholder{color:var(--muted-foreground)}
+.btn-send{width:36px;height:36px;border-radius:50%;border:none;background:var(--primary);color:var(--primary-foreground);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .btn-send:hover{opacity:.9;transform:scale(1.05)}
 .btn-send:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .btn-send svg{width:15px;height:15px}
-.input-hint{font-size:var(--text-3xs);color:var(--muted);margin-top:4px;font-family:var(--font)}
+.input-hint{font-size:var(--text-3xs);color:var(--muted-foreground);margin-top:4px;font-family:var(--font-sans)}
 
-/* Drop overlay */
-.drop-overlay{position:absolute;inset:0;background:rgba(4,133,247,.06);border:2px dashed var(--blue);border-radius:var(--radius-lg);display:none;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:8px;pointer-events:none}
+.drop-overlay{position:absolute;inset:0;background:rgba(4,133,247,.06);border:2px dashed var(--primary);border-radius:calc(var(--radius) - 2px);display:none;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:8px;pointer-events:none}
 .drop-overlay.visible{display:flex}
-.drop-overlay-text{font-size:var(--text-sm);font-weight:var(--fw-semibold);color:var(--blue);font-family:var(--font)}
-.drop-overlay-sub{font-size:var(--text-2xs);color:var(--muted);font-family:var(--font)}
+.drop-overlay-text{font-size:var(--text-sm);font-weight:var(--fw-semibold);color:var(--primary);font-family:var(--font-sans)}
+.drop-overlay-sub{font-size:var(--text-2xs);color:var(--muted-foreground);font-family:var(--font-sans)}
 
-/* Loading / error */
 #loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;width:100%;gap:12px}
-.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#loading-text{font-size:var(--text-xs);color:var(--muted);font-family:var(--font)}
+#loading-text{font-size:var(--text-xs);color:var(--muted-foreground);font-family:var(--font-sans)}
 #app{display:none;width:100%;height:100vh}
-
-/* Scrollbar */
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+::-webkit-scrollbar-thumb:hover{background:var(--muted-foreground)}
 </style>
 </head>
 <body>
 <div id="loading"><div class="spinner"></div><div id="loading-text">Connecting to Excel...</div></div>
 <div id="app">
-  <!-- Sidebar: conversation history -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <span class="sidebar-title">History</span>
@@ -172,80 +171,65 @@ body{font-family:var(--font);background:var(--bg);color:var(--fg);font-size:var(
     </div>
     <div class="sidebar-list" id="sidebarList"></div>
   </div>
-
-  <!-- Main chat panel -->
   <div class="main" id="mainPanel" style="position:relative">
     <div class="drop-overlay" id="dropOverlay">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--blue)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--primary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span class="drop-overlay-text">Drop files here</span>
       <span class="drop-overlay-sub">XLSX, CSV, JSON, TXT</span>
     </div>
-
     <div class="header">
       <div class="header-left">
         <button class="btn-menu" onclick="toggleSidebar()" title="Chat history">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </button>
         <div class="logo">MF</div>
         <span class="header-title">ModelForge</span>
       </div>
       <div class="status-pill online" id="statusPill"><div class="status-dot"></div><span id="statusText">Online</span></div>
     </div>
-
     <div class="quick-row" id="quickRow">
       <div class="quick-chip" onclick="insertQuick('LBO')">LBO</div>
       <div class="quick-chip" onclick="insertQuick('DCF')">DCF</div>
-      <div class="quick-chip" onclick="insertQuick('M&A')">M&A</div>
+      <div class="quick-chip" onclick="insertQuick('M\u0026A')">M&#38;A</div>
       <div class="quick-chip" onclick="insertQuick('Variance')">Variance</div>
       <div class="quick-chip" onclick="insertQuick('Comps')">Comps</div>
       <div class="quick-chip" onclick="insertQuick('3-Stmt')">3-Stmt</div>
     </div>
-
     <div class="chat-area" id="chatArea">
       <div class="chat-empty" id="chatEmpty">
         <div class="chat-empty-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--blue);opacity:.7"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--primary);opacity:.7"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         </div>
         <h3>ModelForge Agent</h3>
         <p>Build, edit, and analyze financial models live in Excel. Attach files for reference or just type a request.</p>
       </div>
     </div>
-
     <div class="input-area">
       <div class="file-preview-bar" id="filePreviewBar" style="display:none"></div>
       <div class="input-row">
         <button class="btn-attach" id="btnAttach" onclick="triggerFileInput()" title="Attach file">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
-        <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.xlsm,.csv,.json,.txt,.md,.tsv,.pdf" style="display:none" onchange="handleFileSelect(event)">
+        <input type="file" id="fileInput" multiple="multiple" accept=".xlsx,.xls,.xlsm,.csv,.json,.txt,.md,.tsv,.pdf" style="display:none" onchange="handleFileSelect(event)"/>
         <textarea class="input-field" id="inputField" rows="1" placeholder="Ask me to build or edit a model..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <button class="btn-send" id="btnSend" onclick="sendMessage()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
         </button>
       </div>
-      <div class="input-hint">Shift+Enter for new line &middot; Drop files to attach</div>
+      <div class="input-hint">Shift+Enter for new line &#183; Drop files to attach</div>
     </div>
   </div>
 </div>
-
 <script>
-/* ═══════════════════════════════════════════════════════════
-   ModelForge Agent Taskpane — v4.0
-   Chatbot UI with history, live workbook tools, file upload
-   ═══════════════════════════════════════════════════════════ */
-
+//<![CDATA[
 var API_BASE = "https://rwmxzasmtalgocuotfke.supabase.co/functions/v1/make-server-f3f66941";
-var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bXh6YXNtdGFsZ29jdW90ZmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMjk1MzYsImV4cCI6MjA4NjYwNTUzNn0.avix-4C1VBu0wJ-QZToWmkgq9jpHuQJu1axhQ4XDHyg";
-var AUTH = { "Content-Type": "application/json", "Authorization": "Bearer " + ANON_KEY };
-
+var ANON_KEY = "sb_publishable_6HdSzr_3F8ls_dcoI71Nkg_5xcukxDh";
+var AUTH = { "Content-Type": "application/json", "Authorization": "Bearer sb_publishable_6HdSzr_3F8ls_dcoI71Nkg_5xcukxDh" };
 var isRunning = false;
 var sheetIdMap = {};
 var sheetIdCounter = 0;
-var pendingFiles = []; // Files staged for next message
+var pendingFiles = [];
 var sidebarOpen = false;
-
-// ── Conversation state ────────────────────────────────
-// Each conversation: { id, sessionId (server), title, messages: [{role,content,toolCalls,files,ts}], createdAt, updatedAt }
 var conversations = [];
 var activeConvId = null;
 
@@ -254,26 +238,21 @@ function loadConversations() {
     var raw = localStorage.getItem("mf_conversations");
     if (raw) conversations = JSON.parse(raw);
   } catch(e) { conversations = []; }
-  // Also load from server in background
   loadServerSessions();
 }
-
 function saveConversations() {
   try {
-    // Only keep last 30 conversations, and trim messages to last 40 per conv
     var toSave = conversations.slice(0, 30).map(function(c) {
       return Object.assign({}, c, { messages: (c.messages || []).slice(-40) });
     });
     localStorage.setItem("mf_conversations", JSON.stringify(toSave));
   } catch(e) { console.error("Save error:", e); }
 }
-
 function loadServerSessions() {
   fetch(API_BASE + "/ai/agent/sessions", { headers: AUTH })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       var sessions = data.sessions || [];
-      // Merge server sessions that aren't in local storage
       sessions.forEach(function(s) {
         var exists = conversations.find(function(c) { return c.sessionId === s.id; });
         if (!exists && s.messageCount > 1) {
@@ -281,7 +260,7 @@ function loadServerSessions() {
             id: "conv-" + Date.now() + "-" + Math.random().toString(36).slice(2,6),
             sessionId: s.id,
             title: s.modelType ? s.modelType + " Model" : "Session",
-            messages: [], // Will load on-demand
+            messages: [],
             createdAt: s.createdAt,
             updatedAt: s.lastActiveAt,
             serverOnly: true
@@ -293,42 +272,31 @@ function loadServerSessions() {
     })
     .catch(function(e) { console.log("Server sessions fetch:", e); });
 }
-
 function getActiveConv() {
   if (!activeConvId) return null;
   return conversations.find(function(c) { return c.id === activeConvId; });
 }
-
 function createNewChat() {
   var conv = {
     id: "conv-" + Date.now() + "-" + Math.random().toString(36).slice(2,6),
-    sessionId: null,
-    title: "New Chat",
-    messages: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    sessionId: null, title: "New Chat", messages: [],
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
   };
   conversations.unshift(conv);
   activeConvId = conv.id;
-  saveConversations();
-  renderSidebar();
-  renderChat();
+  saveConversations(); renderSidebar(); renderChat();
   document.getElementById("inputField").focus();
 }
-
 function switchConversation(convId) {
   activeConvId = convId;
   var conv = getActiveConv();
-  // If server-only, load messages from server
   if (conv && conv.serverOnly && conv.messages.length === 0 && conv.sessionId) {
     fetch(API_BASE + "/ai/agent/sessions/" + conv.sessionId, { headers: AUTH })
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.messages) {
-          // Convert server messages to local format
           data.messages.forEach(function(m) {
             if (m.role === "user") {
-              // Strip wb_context wrapper
               var content = m.content || "";
               var ctxEnd = content.indexOf("</wb_context>");
               if (ctxEnd > -1) content = content.substring(ctxEnd + 14).trim();
@@ -337,26 +305,21 @@ function switchConversation(convId) {
               conv.messages.push({ role: "assistant", content: m.content, ts: Date.now() });
             } else if (m.role === "assistant" && m.tool_calls) {
               conv.messages.push({
-                role: "tool_calls",
-                content: "",
+                role: "tool_calls", content: "",
                 toolCalls: m.tool_calls.map(function(tc) {
                   return { id: tc.id, name: tc.name, status: "done", arguments: {} };
-                }),
-                ts: Date.now()
+                }), ts: Date.now()
               });
             }
           });
           conv.serverOnly = false;
-          saveConversations();
-          renderChat();
+          saveConversations(); renderChat();
         }
       })
       .catch(function(e) { console.log("Load session error:", e); });
   }
-  renderSidebar();
-  renderChat();
+  renderSidebar(); renderChat();
 }
-
 function deleteConversation(convId, evt) {
   if (evt) { evt.stopPropagation(); evt.preventDefault(); }
   var conv = conversations.find(function(c) { return c.id === convId; });
@@ -364,23 +327,18 @@ function deleteConversation(convId, evt) {
   if (activeConvId === convId) {
     activeConvId = conversations.length ? conversations[0].id : null;
   }
-  // Delete server session too
   if (conv && conv.sessionId) {
     fetch(API_BASE + "/ai/agent/sessions/" + conv.sessionId, {
-      method: "DELETE",
-      headers: AUTH
+      method: "DELETE", headers: AUTH
     }).catch(function(){});
   }
-  saveConversations();
-  renderSidebar();
-  renderChat();
+  saveConversations(); renderSidebar(); renderChat();
 }
-
 function renderSidebar() {
   var list = document.getElementById("sidebarList");
   if (!list) return;
   if (conversations.length === 0) {
-    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:var(--text-2xs);font-family:var(--font)">No conversations yet.<br>Start a new chat!</div>';
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted-foreground);font-size:var(--text-2xs);font-family:var(--font-sans)">No conversations yet.</div>';
     return;
   }
   var html = "";
@@ -389,24 +347,23 @@ function renderSidebar() {
     var time = timeAgo(c.updatedAt || c.createdAt);
     var msgCount = (c.messages || []).filter(function(m){ return m.role === "user"; }).length;
     var iconBg = isActive ? "rgba(4,133,247,.12)" : "rgba(113,113,122,.08)";
-    var iconColor = isActive ? "var(--blue)" : "var(--muted)";
+    var iconColor = isActive ? "var(--primary)" : "var(--muted-foreground)";
     html += '<div class="conv-item' + (isActive ? ' active' : '') + '" onclick="switchConversation(\'' + c.id + '\')">';
     html += '<div class="conv-icon" style="background:' + iconBg + ';color:' + iconColor + '">';
-    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>';
+    html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
     html += '</div>';
     html += '<div class="conv-info"><div class="conv-title">' + escapeHtml(c.title) + '</div>';
-    html += '<div class="conv-meta">' + msgCount + ' msg' + (msgCount!==1?'s':'') + ' &middot; ' + time + '</div></div>';
-    html += '<button class="conv-delete" onclick="deleteConversation(\'' + c.id + '\', event)" title="Delete">&times;</button>';
+    html += '<div class="conv-meta">' + msgCount + ' msg' + (msgCount!==1?'s':'') + ' &#183; ' + time + '</div></div>';
+    html += '<button class="conv-delete" onclick="deleteConversation(\'' + c.id + '\', event)" title="Delete">&#215;</button>';
     html += '</div>';
   });
   list.innerHTML = html;
 }
-
 function renderChat() {
   var area = document.getElementById("chatArea");
   var conv = getActiveConv();
   if (!conv || conv.messages.length === 0) {
-    area.innerHTML = '<div class="chat-empty" id="chatEmpty"><div class="chat-empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--blue);opacity:.7"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><h3>ModelForge Agent</h3><p>Build, edit, and analyze financial models live in Excel. Attach files for reference or just type a request.</p></div>';
+    area.innerHTML = '<div class="chat-empty" id="chatEmpty"><div class="chat-empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--primary);opacity:.7"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><h3>ModelForge Agent</h3><p>Build, edit, and analyze financial models live in Excel. Attach files for reference or just type a request.</p></div>';
     return;
   }
   var html = "";
@@ -430,8 +387,7 @@ function renderChat() {
       html += '<div class="msg assistant">';
       msg.toolCalls.forEach(function(tc) {
         var desc = summarizeTool(tc.name, tc.arguments || {});
-        html += '<div class="tool-call">';
-        html += '<div class="tool-call-header"><span class="tool-call-name">' + tc.name + '</span>';
+        html += '<div class="tool-call"><div class="tool-call-header"><span class="tool-call-name">' + tc.name + '</span>';
         html += '<span class="tool-call-status ' + (tc.status||"done") + '">' + (tc.status||"done") + '</span></div>';
         html += '<div class="tool-call-detail">' + escapeHtml(desc) + '</div></div>';
       });
@@ -441,20 +397,17 @@ function renderChat() {
   area.innerHTML = html;
   area.scrollTop = area.scrollHeight;
 }
-
 function toggleSidebar() {
   sidebarOpen = !sidebarOpen;
   document.getElementById("sidebar").classList.toggle("open", sidebarOpen);
 }
 
-// ── Sheet ID management ─────────────────────────────
 function getStableSheetId(guid) {
   if (sheetIdMap[guid]) return sheetIdMap[guid];
   sheetIdCounter++;
   sheetIdMap[guid] = sheetIdCounter;
   return sheetIdCounter;
 }
-
 function getSheetByStableId(context, stableId) {
   var sheets = context.workbook.worksheets;
   sheets.load("items");
@@ -468,52 +421,36 @@ function getSheetByStableId(context, stableId) {
     return null;
   });
 }
-
-// ── Lightweight Workbook Metadata (no bulk data) ─────
 function getWorkbookMetadata() {
   if (typeof Excel === "undefined") return Promise.resolve(null);
   return Excel.run(function(ctx) {
-    var wb = ctx.workbook;
-    wb.load("name");
-    var sheets = wb.worksheets;
-    sheets.load("items");
-    var activeSheet = sheets.getActiveWorksheet();
-    activeSheet.load("id,name");
-    var selectedRange = wb.getSelectedRange();
-    selectedRange.load("address");
+    var wb = ctx.workbook; wb.load("name");
+    var sheets = wb.worksheets; sheets.load("items");
+    var activeSheet = sheets.getActiveWorksheet(); activeSheet.load("id,name");
+    var selectedRange = wb.getSelectedRange(); selectedRange.load("address");
     return ctx.sync().then(function() {
       var sheetData = [];
       sheets.items.forEach(function(s) {
         s.load("id,name");
-        var ur = s.getUsedRangeOrNullObject();
-        ur.load("rowCount,columnCount");
+        var ur = s.getUsedRangeOrNullObject(); ur.load("rowCount,columnCount");
         sheetData.push({ sheet: s, usedRange: ur });
       });
       return ctx.sync().then(function() {
         var sheetsMetadata = sheetData.map(function(d) {
-          return {
-            id: getStableSheetId(d.sheet.id),
-            name: d.sheet.name,
+          return { id: getStableSheetId(d.sheet.id), name: d.sheet.name,
             maxRows: d.usedRange.isNullObject ? 0 : d.usedRange.rowCount,
-            maxColumns: d.usedRange.isNullObject ? 0 : d.usedRange.columnCount
-          };
+            maxColumns: d.usedRange.isNullObject ? 0 : d.usedRange.columnCount };
         });
         var rangeAddr = selectedRange.address || "A1";
         if (rangeAddr.indexOf("!") > -1) rangeAddr = rangeAddr.split("!")[1];
-        return {
-          fileName: wb.name || "Untitled",
-          sheetsMetadata: sheetsMetadata,
-          totalSheets: sheets.items.length,
-          activeSheetId: getStableSheetId(activeSheet.id),
-          activeSheetName: activeSheet.name,
-          selectedRange: rangeAddr
-        };
+        return { fileName: wb.name || "Untitled", sheetsMetadata: sheetsMetadata,
+          totalSheets: sheets.items.length, activeSheetId: getStableSheetId(activeSheet.id),
+          activeSheetName: activeSheet.name, selectedRange: rangeAddr };
       });
     });
   });
 }
 
-// ── Cell address helpers ─────────────────────────────
 function colToLetter(i) { var l=""; var t=i; while(t>=0){l=String.fromCharCode((t%26)+65)+l;t=Math.floor(t/26)-1;} return l; }
 function cellAddr(r,c) { return colToLetter(c)+(r+1); }
 function parseRangeStart(addr) {
@@ -524,34 +461,25 @@ function parseRangeStart(addr) {
   return {col:c, row:parseInt(m[2],10)-1};
 }
 
-// ── Tool Executors (ported from open-excel/api.ts) ───
 var toolExecutors = {
   get_cell_ranges: function(params) {
     return Excel.run(function(ctx) {
       return getSheetByStableId(ctx, params.sheetId).then(function(sheet) {
         if (!sheet) throw new Error("Sheet ID " + params.sheetId + " not found");
         sheet.load("name,id");
-        var usedRange = sheet.getUsedRangeOrNullObject();
-        usedRange.load("address");
+        var usedRange = sheet.getUsedRangeOrNullObject(); usedRange.load("address");
         return ctx.sync().then(function() {
           var dim = usedRange.isNullObject ? "A1" : (usedRange.address.split("!")[1]||"A1");
-          var cells = {}, formulas = {}, styles = {};
-          var totalCells = 0, limit = params.cellLimit || 2000;
+          var cells = {}, formulas = {}; var totalCells = 0, limit = params.cellLimit || 2000;
           var rangeLoads = [];
-          (params.ranges||[]).forEach(function(ra) {
-            if (totalCells >= limit) return;
-            var range = sheet.getRange(ra);
-            range.load("values,formulas,address,rowCount,columnCount");
-            rangeLoads.push(range);
-          });
+          (params.ranges||[]).forEach(function(ra) { if (totalCells >= limit) return; var range = sheet.getRange(ra); range.load("values,formulas,address,rowCount,columnCount"); rangeLoads.push(range); });
           return ctx.sync().then(function() {
             rangeLoads.forEach(function(range) {
               var start = parseRangeStart(range.address);
               for (var r=0; r<range.rowCount && totalCells<limit; r++) {
                 for (var c=0; c<range.columnCount && totalCells<limit; c++) {
                   var a = cellAddr(start.row+r, start.col+c);
-                  var v = range.values[r][c];
-                  var f = range.formulas[r][c];
+                  var v = range.values[r][c]; var f = range.formulas[r][c];
                   if (v !== null && v !== "" && v !== undefined) { cells[a] = v; totalCells++; }
                   if (typeof f === "string" && f.charAt(0) === "=") formulas[a] = f;
                 }
@@ -565,24 +493,15 @@ var toolExecutors = {
       });
     });
   },
-
   get_range_as_csv: function(params) {
     return Excel.run(function(ctx) {
       return getSheetByStableId(ctx, params.sheetId).then(function(sheet) {
-        if (!sheet) throw new Error("Sheet not found");
-        sheet.load("name");
-        var range = sheet.getRange(params.range);
-        range.load("values,rowCount,columnCount");
+        if (!sheet) throw new Error("Sheet not found"); sheet.load("name");
+        var range = sheet.getRange(params.range); range.load("values,rowCount,columnCount");
         return ctx.sync().then(function() {
-          var maxR = params.maxRows || 500;
-          var startR = (params.includeHeaders===false) ? 1 : 0;
-          var rows = [];
+          var maxR = params.maxRows || 500; var startR = (params.includeHeaders===false) ? 1 : 0; var rows = [];
           for (var r=startR; r<Math.min(range.rowCount, startR+maxR); r++) {
-            var row = range.values[r].map(function(v){
-              if(v===null||v===undefined)return"";
-              var s=String(v);
-              return (s.indexOf(",")>-1||s.indexOf('"')>-1||s.indexOf("\n")>-1)?'"'+s.replace(/"/g,'""')+'"':s;
-            });
+            var row = range.values[r].map(function(v){ if(v===null||v===undefined)return""; var s=String(v); return (s.indexOf(",")>-1||s.indexOf('"')>-1||s.indexOf("\n")>-1)?'"'+s.replace(/"/g,'""')+'"':s; });
             rows.push(row.join(","));
           }
           return {success:true, csv:rows.join("\n"), rowCount:rows.length, columnCount:range.columnCount, sheetName:sheet.name};
@@ -590,204 +509,113 @@ var toolExecutors = {
       });
     });
   },
-
   search_data: function(params) {
     return Excel.run(function(ctx) {
-      var sheets = ctx.workbook.worksheets;
-      sheets.load("items");
-      return ctx.sync().then(function() {
-        sheets.items.forEach(function(s){s.load("id,name")});
-        return ctx.sync();
-      }).then(function() {
-        var matches = [];
-        var sheetsToSearch = sheets.items;
-        if (params.sheetId) {
-          sheetsToSearch = sheetsToSearch.filter(function(s){return getStableSheetId(s.id)===params.sheetId});
-        }
+      var sheets = ctx.workbook.worksheets; sheets.load("items");
+      return ctx.sync().then(function() { sheets.items.forEach(function(s){s.load("id,name")}); return ctx.sync(); }).then(function() {
+        var matches = []; var sheetsToSearch = sheets.items;
+        if (params.sheetId) { sheetsToSearch = sheetsToSearch.filter(function(s){return getStableSheetId(s.id)===params.sheetId}); }
         var rangeLoads = [];
-        sheetsToSearch.forEach(function(s) {
-          var ur = s.getUsedRangeOrNullObject();
-          ur.load("values,formulas,address,rowCount,columnCount");
-          rangeLoads.push({sheet:s, range:ur});
-        });
+        sheetsToSearch.forEach(function(s) { var ur = s.getUsedRangeOrNullObject(); ur.load("values,formulas,address,rowCount,columnCount"); rangeLoads.push({sheet:s, range:ur}); });
         return ctx.sync().then(function() {
-          var term = (params.matchCase ? params.searchTerm : params.searchTerm.toLowerCase());
-          var max = params.maxResults || 100;
-          rangeLoads.forEach(function(d) {
-            if (d.range.isNullObject || matches.length >= max) return;
-            var start = parseRangeStart(d.range.address);
-            for (var r=0; r<d.range.rowCount && matches.length<max; r++) {
-              for (var c=0; c<d.range.columnCount && matches.length<max; c++) {
-                var v = d.range.values[r][c];
-                var target = params.matchCase ? String(v||"") : String(v||"").toLowerCase();
-                if (target.indexOf(term) > -1) {
-                  matches.push({sheetName:d.sheet.name, sheetId:getStableSheetId(d.sheet.id), a1:cellAddr(start.row+r,start.col+c), value:v});
-                }
-              }
-            }
+          var term = (params.matchCase ? params.searchTerm : params.searchTerm.toLowerCase()); var max = params.maxResults || 100;
+          rangeLoads.forEach(function(d) { if (d.range.isNullObject || matches.length >= max) return; var start = parseRangeStart(d.range.address);
+            for (var r=0; r<d.range.rowCount && matches.length<max; r++) { for (var c=0; c<d.range.columnCount && matches.length<max; c++) {
+              var v = d.range.values[r][c]; var target = params.matchCase ? String(v||"") : String(v||"").toLowerCase();
+              if (target.indexOf(term) > -1) { matches.push({sheetName:d.sheet.name, sheetId:getStableSheetId(d.sheet.id), a1:cellAddr(start.row+r,start.col+c), value:v}); }
+            }}
           });
           return {success:true, matches:matches, totalFound:matches.length, searchTerm:params.searchTerm};
         });
       });
     });
   },
-
   get_all_objects: function(params) {
     return Excel.run(function(ctx) {
-      var sheets = ctx.workbook.worksheets;
-      sheets.load("items");
+      var sheets = ctx.workbook.worksheets; sheets.load("items");
       return ctx.sync().then(function() {
-        var objs = [];
-        var loads = [];
-        sheets.items.forEach(function(s) {
-          s.load("id,name");
-          var charts = s.charts; charts.load("items");
-          loads.push({sheet:s, charts:charts});
-        });
-        return ctx.sync().then(function() {
-          loads.forEach(function(d) {
-            d.charts.items.forEach(function(ch){ch.load("id,name")});
-          });
-          return ctx.sync();
-        }).then(function() {
-          loads.forEach(function(d) {
-            d.charts.items.forEach(function(ch) {
-              objs.push({id:ch.id, type:"chart", name:ch.name, sheetId:getStableSheetId(d.sheet.id), sheetName:d.sheet.name});
-            });
-          });
+        var objs = []; var loads = [];
+        sheets.items.forEach(function(s) { s.load("id,name"); var charts = s.charts; charts.load("items"); loads.push({sheet:s, charts:charts}); });
+        return ctx.sync().then(function() { loads.forEach(function(d) { d.charts.items.forEach(function(ch){ch.load("id,name")}); }); return ctx.sync(); }).then(function() {
+          loads.forEach(function(d) { d.charts.items.forEach(function(ch) { objs.push({id:ch.id, type:"chart", name:ch.name, sheetId:getStableSheetId(d.sheet.id), sheetName:d.sheet.name}); }); });
           return {success:true, objects:objs};
         });
       });
     });
   },
-
   set_cell_range: function(params) {
     return Excel.run(function(ctx) {
       return getSheetByStableId(ctx, params.sheetId).then(function(sheet) {
         if (!sheet) throw new Error("Sheet ID " + params.sheetId + " not found");
-        var range = sheet.getRange(params.range);
-        range.load("rowCount,columnCount,values,formulas,address");
+        var range = sheet.getRange(params.range); range.load("rowCount,columnCount,values,formulas,address");
         return ctx.sync().then(function() {
           if (!params.allow_overwrite) {
-            var nonEmpty = [];
-            var start = parseRangeStart(range.address);
-            for (var r=0; r<range.rowCount; r++) {
-              for (var c=0; c<range.columnCount; c++) {
-                var v = range.values[r][c];
-                var f = range.formulas[r][c];
-                if ((v!==null&&v!==""&&v!==undefined)||(typeof f==="string"&&f.charAt(0)==="=")) {
-                  nonEmpty.push(cellAddr(start.row+r,start.col+c));
-                }
-              }
-            }
-            if (nonEmpty.length > 0) {
-              var list = nonEmpty.length<=5 ? nonEmpty.join(", ") : nonEmpty.slice(0,5).join(", ")+"...";
-              throw new Error("Would overwrite "+nonEmpty.length+" non-empty cell(s): "+list+". Retry with allow_overwrite=true.");
-            }
+            var nonEmpty = []; var start = parseRangeStart(range.address);
+            for (var r=0; r<range.rowCount; r++) { for (var c=0; c<range.columnCount; c++) {
+              var v = range.values[r][c]; var f = range.formulas[r][c];
+              if ((v!==null&&v!==""&&v!==undefined)||(typeof f==="string"&&f.charAt(0)==="=")) { nonEmpty.push(cellAddr(start.row+r,start.col+c)); }
+            }}
+            if (nonEmpty.length > 0) { var list = nonEmpty.length<=5 ? nonEmpty.join(", ") : nonEmpty.slice(0,5).join(", ")+"...";
+              throw new Error("Would overwrite "+nonEmpty.length+" non-empty cell(s): "+list+". Retry with allow_overwrite=true."); }
           }
-          var values = [], formulas = [], hasFormulas = false;
-          var cells = params.cells;
-          for (var r=0; r<cells.length; r++) {
-            values[r]=[]; formulas[r]=[];
-            for (var c=0; c<cells[r].length; c++) {
-              var cell = cells[r][c];
+          var values = [], formulas = [], hasFormulas = false; var cells = params.cells;
+          for (var r=0; r<cells.length; r++) { values[r]=[]; formulas[r]=[];
+            for (var c=0; c<cells[r].length; c++) { var cell = cells[r][c];
               if (cell.formula) { formulas[r][c]=cell.formula; values[r][c]=null; hasFormulas=true; }
               else { values[r][c]=(cell.value!==undefined?cell.value:null); formulas[r][c]=null; }
+          }}
+          if (hasFormulas) { range.formulas = formulas.map(function(row,ri){return row.map(function(f,ci){return f||values[ri][ci]})}); }
+          else { range.values = values; }
+          for (var r=0; r<cells.length; r++) { for (var c=0; c<cells[r].length; c++) { var cell = cells[r][c];
+            if (!cell.cellStyles && !cell.borderStyles) continue; var cr = range.getCell(r,c);
+            if (cell.cellStyles) { var s = cell.cellStyles;
+              if (s.fontWeight==="bold") cr.format.font.bold=true; if (s.fontWeight==="normal") cr.format.font.bold=false;
+              if (s.fontStyle==="italic") cr.format.font.italic=true; if (s.fontSize) cr.format.font.size=s.fontSize;
+              if (s.fontFamily) cr.format.font.name=s.fontFamily; if (s.fontColor) cr.format.font.color=s.fontColor;
+              if (s.backgroundColor) cr.format.fill.color=s.backgroundColor;
+              if (s.horizontalAlignment) cr.format.horizontalAlignment=s.horizontalAlignment;
+              if (s.numberFormat) cr.numberFormat=[[s.numberFormat]];
             }
-          }
-          if (hasFormulas) {
-            range.formulas = formulas.map(function(row,ri){return row.map(function(f,ci){return f||values[ri][ci]})});
-          } else {
-            range.values = values;
-          }
-          for (var r=0; r<cells.length; r++) {
-            for (var c=0; c<cells[r].length; c++) {
-              var cell = cells[r][c];
-              if (!cell.cellStyles && !cell.borderStyles) continue;
-              var cr = range.getCell(r,c);
-              if (cell.cellStyles) {
-                var s = cell.cellStyles;
-                if (s.fontWeight==="bold") cr.format.font.bold=true;
-                if (s.fontWeight==="normal") cr.format.font.bold=false;
-                if (s.fontStyle==="italic") cr.format.font.italic=true;
-                if (s.fontSize) cr.format.font.size=s.fontSize;
-                if (s.fontFamily) cr.format.font.name=s.fontFamily;
-                if (s.fontColor) cr.format.font.color=s.fontColor;
-                if (s.backgroundColor) cr.format.fill.color=s.backgroundColor;
-                if (s.horizontalAlignment) cr.format.horizontalAlignment=s.horizontalAlignment;
-                if (s.numberFormat) cr.numberFormat=[[s.numberFormat]];
-              }
-              if (cell.borderStyles) {
-                var bMap = [{k:"top",i:"EdgeTop"},{k:"bottom",i:"EdgeBottom"},{k:"left",i:"EdgeLeft"},{k:"right",i:"EdgeRight"}];
-                bMap.forEach(function(b) {
-                  var side = cell.borderStyles[b.k];
-                  if (!side) return;
-                  var border = cr.format.borders.getItem(b.i);
-                  if (side.style) {
-                    var sm = {solid:"Continuous",dashed:"Dash",dotted:"Dot",double:"Double"};
-                    border.style = sm[side.style]||"Continuous";
-                  }
-                  if (side.weight) {
-                    var wm = {thin:"Thin",medium:"Medium",thick:"Thick"};
-                    border.weight = wm[side.weight]||"Thin";
-                  }
-                  if (side.color) border.color = side.color;
-                });
-              }
-            }
-          }
+            if (cell.borderStyles) { [{k:"top",i:"EdgeTop"},{k:"bottom",i:"EdgeBottom"},{k:"left",i:"EdgeLeft"},{k:"right",i:"EdgeRight"}].forEach(function(b) {
+              var side = cell.borderStyles[b.k]; if (!side) return; var border = cr.format.borders.getItem(b.i);
+              if (side.style) { border.style = ({solid:"Continuous",dashed:"Dash",dotted:"Dot",double:"Double"})[side.style]||"Continuous"; }
+              if (side.weight) { border.weight = ({thin:"Thin",medium:"Medium",thick:"Thick"})[side.weight]||"Thin"; }
+              if (side.color) border.color = side.color;
+            }); }
+          }}
           return ctx.sync().then(function() {
-            if (params.copyToRange) {
-              var dest = sheet.getRange(params.copyToRange);
-              dest.copyFrom(range, "All");
-              return ctx.sync();
-            }
-          }).then(function() {
-            return {success:true, cellsWritten:cells.flat().length};
-          });
+            if (params.copyToRange) { var dest = sheet.getRange(params.copyToRange); dest.copyFrom(range, "All"); return ctx.sync(); }
+          }).then(function() { return {success:true, cellsWritten:cells.flat().length}; });
         });
       });
     });
   },
-
   clear_cell_range: function(params) {
     return Excel.run(function(ctx) {
       return getSheetByStableId(ctx, params.sheetId).then(function(sheet) {
         if (!sheet) throw new Error("Sheet not found");
-        var range = sheet.getRange(params.range);
-        var ct = params.clearType || "contents";
-        var map = {contents:"Contents", formats:"Formats", all:"All"};
-        range.clear(map[ct]||"Contents");
+        var range = sheet.getRange(params.range); var ct = params.clearType || "contents";
+        range.clear(({contents:"Contents", formats:"Formats", all:"All"})[ct]||"Contents");
         return ctx.sync().then(function(){return {success:true, clearedRange:params.range}});
       });
     });
   },
-
   copy_to: function(params) {
     return Excel.run(function(ctx) {
       return getSheetByStableId(ctx, params.sheetId).then(function(sheet) {
         if (!sheet) throw new Error("Sheet not found");
-        var src = sheet.getRange(params.sourceRange);
-        var dst = sheet.getRange(params.destinationRange);
-        dst.copyFrom(src, "All");
+        sheet.getRange(params.destinationRange).copyFrom(sheet.getRange(params.sourceRange), "All");
         return ctx.sync().then(function(){return {success:true, source:params.sourceRange, destination:params.destinationRange}});
       });
     });
   },
-
   modify_sheet_structure: function(params) {
     return Excel.run(function(ctx) {
       return getSheetByStableId(ctx, params.sheetId).then(function(sheet) {
-        if (!sheet) throw new Error("Sheet not found");
-        var op = params.operation;
-        if (op === "freeze") {
-          sheet.freezePanes.freezeAt(sheet.getRange(params.reference || "A1"));
-        } else if (op === "unfreeze") {
-          sheet.freezePanes.unfreeze();
-        } else if (params.reference) {
-          var isRow = params.dimension === "rows";
-          var count = params.count || 1;
-          var ref = params.reference;
+        if (!sheet) throw new Error("Sheet not found"); var op = params.operation;
+        if (op === "freeze") { sheet.freezePanes.freezeAt(sheet.getRange(params.reference || "A1")); }
+        else if (op === "unfreeze") { sheet.freezePanes.unfreeze(); }
+        else if (params.reference) { var isRow = params.dimension === "rows"; var count = params.count || 1; var ref = params.reference;
           var rangeRef = isRow ? (ref+":"+(parseInt(ref)+count-1)) : (ref+":"+colToLetter(ref.split("").reduce(function(a,ch){return a*26+ch.charCodeAt(0)-64},0)-1+count-1));
           var target = sheet.getRange(rangeRef);
           if (op === "insert") { target.insert(isRow?"Down":"Right"); }
@@ -799,47 +627,20 @@ var toolExecutors = {
       });
     });
   },
-
   modify_workbook_structure: function(params) {
     return Excel.run(function(ctx) {
-      var sheets = ctx.workbook.worksheets;
-      var op = params.operation;
-      if (op === "create") {
-        var ns = sheets.add(params.sheetName || ("Sheet"+(sheetIdCounter+1)));
-        if (params.tabColor) ns.tabColor = params.tabColor;
-        ns.load("id,name");
-        return ctx.sync().then(function() {
-          var sid = getStableSheetId(ns.id);
-          return {success:true, operation:op, sheetId:sid, sheetName:ns.name};
-        });
-      } else if (op === "delete") {
-        return getSheetByStableId(ctx, params.sheetId).then(function(s) {
-          if(!s)throw new Error("Sheet not found");
-          s.delete();
-          return ctx.sync().then(function(){return {success:true,operation:op}});
-        });
-      } else if (op === "rename") {
-        return getSheetByStableId(ctx, params.sheetId).then(function(s) {
-          if(!s)throw new Error("Sheet not found");
-          s.name = params.newName;
-          return ctx.sync().then(function(){return {success:true,operation:op,sheetName:params.newName}});
-        });
-      } else if (op === "duplicate") {
-        return getSheetByStableId(ctx, params.sheetId).then(function(s) {
-          if(!s)throw new Error("Sheet not found");
-          var copy = s.copy();
-          if(params.newName)copy.name=params.newName;
-          copy.load("id,name");
-          return ctx.sync().then(function(){
-            var sid=getStableSheetId(copy.id);
-            return {success:true,operation:op,sheetId:sid,sheetName:copy.name};
-          });
-        });
+      var sheets = ctx.workbook.worksheets; var op = params.operation;
+      if (op === "create") { var ns = sheets.add(params.sheetName || ("Sheet"+(sheetIdCounter+1)));
+        if (params.tabColor) ns.tabColor = params.tabColor; ns.load("id,name");
+        return ctx.sync().then(function() { return {success:true, operation:op, sheetId:getStableSheetId(ns.id), sheetName:ns.name}; });
+      } else if (op === "delete") { return getSheetByStableId(ctx, params.sheetId).then(function(s) { if(!s)throw new Error("Sheet not found"); s.delete(); return ctx.sync().then(function(){return {success:true,operation:op}}); });
+      } else if (op === "rename") { return getSheetByStableId(ctx, params.sheetId).then(function(s) { if(!s)throw new Error("Sheet not found"); s.name = params.newName; return ctx.sync().then(function(){return {success:true,operation:op,sheetName:params.newName}}); });
+      } else if (op === "duplicate") { return getSheetByStableId(ctx, params.sheetId).then(function(s) { if(!s)throw new Error("Sheet not found"); var copy = s.copy(); if(params.newName)copy.name=params.newName; copy.load("id,name");
+        return ctx.sync().then(function(){ return {success:true,operation:op,sheetId:getStableSheetId(copy.id),sheetName:copy.name}; }); });
       }
       return Promise.resolve({success:false,operation:"unknown"});
     });
   },
-
   resize_range: function(params) {
     return Excel.run(function(ctx) {
       return getSheetByStableId(ctx, params.sheetId).then(function(sheet) {
@@ -851,23 +652,18 @@ var toolExecutors = {
       });
     });
   },
-
   modify_object: function(params) {
     return Excel.run(function(ctx) {
       return getSheetByStableId(ctx, params.sheetId).then(function(sheet) {
         if(!sheet)throw new Error("Sheet not found");
         if (params.objectType === "chart") {
-          if (params.operation === "create") {
-            var src = sheet.getRange(params.properties.source);
+          if (params.operation === "create") { var src = sheet.getRange(params.properties.source);
             var chart = sheet.charts.add(params.properties.chartType||"ColumnClustered", src, "Auto");
             if (params.properties.title) chart.title.text = params.properties.title;
             if (params.properties.anchor) chart.setPosition(sheet.getRange(params.properties.anchor));
-            chart.load("id");
-            return ctx.sync().then(function(){return {success:true,operation:"create",id:chart.id}});
-          } else if (params.operation === "delete" && params.id) {
-            sheet.charts.getItem(params.id).delete();
-            return ctx.sync().then(function(){return {success:true,operation:"delete"}});
-          }
+            chart.load("id"); return ctx.sync().then(function(){return {success:true,operation:"create",id:chart.id}});
+          } else if (params.operation === "delete" && params.id) { sheet.charts.getItem(params.id).delete();
+            return ctx.sync().then(function(){return {success:true,operation:"delete"}}); }
         }
         return ctx.sync().then(function(){return {success:true,operation:params.operation}});
       });
@@ -875,33 +671,20 @@ var toolExecutors = {
   }
 };
 
-// ── Execute a single tool call ───────────────────────
 function executeTool(name, args) {
-  if (typeof Excel === "undefined") {
-    return Promise.resolve({success:false, error:"Excel API not available (browser mode)"});
-  }
+  if (typeof Excel === "undefined") return Promise.resolve({success:false, error:"Excel API not available (browser mode)"});
   var executor = toolExecutors[name];
-  if (!executor) {
-    return Promise.resolve({success:false, error:"Unknown tool: "+name});
-  }
-  return executor(args).catch(function(err) {
-    return {success:false, error:err.message||String(err)};
-  });
+  if (!executor) return Promise.resolve({success:false, error:"Unknown tool: "+name});
+  return executor(args).catch(function(err) { return {success:false, error:err.message||String(err)}; });
 }
 
-// ── Chat UI Functions ────────────────────────────────
 function addMessageToDOM(role, content, files) {
   var area = document.getElementById("chatArea");
   var emptyEl = document.getElementById("chatEmpty");
   if (emptyEl) emptyEl.style.display = "none";
-
-  var div = document.createElement("div");
-  div.className = "msg " + role;
-  var html = "";
-
+  var div = document.createElement("div"); div.className = "msg " + role; var html = "";
   if (role === "user" && files && files.length) {
-    files.forEach(function(f) {
-      var ext = (f.name || "").split(".").pop().toLowerCase();
+    files.forEach(function(f) { var ext = (f.name || "").split(".").pop().toLowerCase();
       var cls = (ext==="xlsx"||ext==="xls"||ext==="xlsm") ? "xlsx" : (ext==="csv"?"csv":"other");
       var icon = cls==="xlsx" ? "XLS" : (cls==="csv" ? "CSV" : "DOC");
       html += '<div class="msg-attachment"><div class="file-icon ' + cls + '">' + icon + '</div>';
@@ -909,52 +692,27 @@ function addMessageToDOM(role, content, files) {
       html += '<span class="file-size">' + formatSize(f.size) + '</span></div>';
     });
   }
-
   html += '<div class="msg-bubble">' + escapeHtml(content) + '</div>';
-  div.innerHTML = html;
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
-  return div;
+  div.innerHTML = html; area.appendChild(div); area.scrollTop = area.scrollHeight; return div;
 }
-
 function addToolCallUI(toolCalls) {
-  var area = document.getElementById("chatArea");
-  var container = document.createElement("div");
-  container.className = "msg assistant";
-  var html = "";
-  toolCalls.forEach(function(tc) {
-    var desc = summarizeTool(tc.name, tc.arguments);
-    html += '<div class="tool-call" id="tc-'+tc.id+'">';
-    html += '<div class="tool-call-header"><span class="tool-call-name">'+tc.name+'</span><span class="tool-call-status running" id="tcs-'+tc.id+'">running</span></div>';
-    html += '<div class="tool-call-detail">'+escapeHtml(desc)+'</div>';
-    html += '</div>';
+  var area = document.getElementById("chatArea"); var container = document.createElement("div"); container.className = "msg assistant"; var html = "";
+  toolCalls.forEach(function(tc) { var desc = summarizeTool(tc.name, tc.arguments);
+    html += '<div class="tool-call" id="tc-'+tc.id+'"><div class="tool-call-header"><span class="tool-call-name">'+tc.name+'</span><span class="tool-call-status running" id="tcs-'+tc.id+'">running</span></div>';
+    html += '<div class="tool-call-detail">'+escapeHtml(desc)+'</div></div>';
   });
-  container.innerHTML = html;
-  area.appendChild(container);
-  area.scrollTop = area.scrollHeight;
+  container.innerHTML = html; area.appendChild(container); area.scrollTop = area.scrollHeight;
 }
-
 function updateToolStatus(id, status) {
-  var el = document.getElementById("tcs-" + id);
-  if (!el) return;
-  el.className = "tool-call-status " + status;
-  el.textContent = status === "done" ? "done" : status === "error" ? "error" : "running";
+  var el = document.getElementById("tcs-" + id); if (!el) return;
+  el.className = "tool-call-status " + status; el.textContent = status === "done" ? "done" : status === "error" ? "error" : "running";
 }
-
 function addThinking() {
-  var area = document.getElementById("chatArea");
-  var div = document.createElement("div");
-  div.className = "thinking";
-  div.id = "thinkingIndicator";
+  var area = document.getElementById("chatArea"); var div = document.createElement("div"); div.className = "thinking"; div.id = "thinkingIndicator";
   div.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> Thinking...';
-  area.appendChild(div);
-  area.scrollTop = area.scrollHeight;
+  area.appendChild(div); area.scrollTop = area.scrollHeight;
 }
-
-function removeThinking() {
-  var el = document.getElementById("thinkingIndicator");
-  if (el) el.remove();
-}
+function removeThinking() { var el = document.getElementById("thinkingIndicator"); if (el) el.remove(); }
 
 function summarizeTool(name, args) {
   if (name === "set_cell_range") return "Writing to " + (args.range||"") + " on sheet " + (args.sheetId||"");
@@ -970,317 +728,116 @@ function summarizeTool(name, args) {
   if (name === "get_all_objects") return "Listing all objects";
   return name + "(" + JSON.stringify(args).substring(0, 60) + ")";
 }
+function escapeHtml(s) { if (!s) return ""; return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br/>"); }
+function setRunning(v) { isRunning = v; document.getElementById("btnSend").disabled = v; document.getElementById("inputField").disabled = v; }
+function autoResize(el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 120) + "px"; }
+function handleKey(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function formatSize(bytes) { if (!bytes) return ""; if (bytes > 1024*1024) return (bytes/(1024*1024)).toFixed(1) + " MB"; if (bytes > 1024) return (bytes/1024).toFixed(0) + " KB"; return bytes + " B"; }
+function timeAgo(dateStr) { if (!dateStr) return ""; var diff = Date.now() - new Date(dateStr).getTime(); var mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now"; if (mins < 60) return mins + "m ago"; var hrs = Math.floor(mins / 60); if (hrs < 24) return hrs + "h ago"; return Math.floor(hrs / 24) + "d ago"; }
 
-function escapeHtml(s) {
-  if (!s) return "";
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
-}
-
-function setRunning(v) {
-  isRunning = v;
-  document.getElementById("btnSend").disabled = v;
-  document.getElementById("inputField").disabled = v;
-}
-
-function autoResize(el) {
-  el.style.height = "auto";
-  el.style.height = Math.min(el.scrollHeight, 120) + "px";
-}
-
-function handleKey(e) {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-
-function formatSize(bytes) {
-  if (!bytes) return "";
-  if (bytes > 1024*1024) return (bytes/(1024*1024)).toFixed(1) + " MB";
-  if (bytes > 1024) return (bytes/1024).toFixed(0) + " KB";
-  return bytes + " B";
-}
-
-function timeAgo(dateStr) {
-  if (!dateStr) return "";
-  var diff = Date.now() - new Date(dateStr).getTime();
-  var mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return mins + "m ago";
-  var hrs = Math.floor(mins / 60);
-  if (hrs < 24) return hrs + "h ago";
-  var days = Math.floor(hrs / 24);
-  return days + "d ago";
-}
-
-// ── File Upload ──────────────────────────────────────
-function triggerFileInput() {
-  document.getElementById("fileInput").click();
-}
-
-function handleFileSelect(evt) {
-  var files = evt.target.files;
-  if (!files || !files.length) return;
-  for (var i = 0; i < files.length; i++) {
-    pendingFiles.push(files[i]);
-  }
-  renderFilePreview();
-  evt.target.value = ""; // Reset so same file can be added again
-}
-
+function triggerFileInput() { document.getElementById("fileInput").click(); }
+function handleFileSelect(evt) { var files = evt.target.files; if (!files || !files.length) return;
+  for (var i = 0; i < files.length; i++) { pendingFiles.push(files[i]); } renderFilePreview(); evt.target.value = ""; }
 function renderFilePreview() {
-  var bar = document.getElementById("filePreviewBar");
-  var btn = document.getElementById("btnAttach");
-  if (pendingFiles.length === 0) {
-    bar.style.display = "none";
-    btn.classList.remove("has-files");
-    return;
-  }
-  bar.style.display = "flex";
-  btn.classList.add("has-files");
-  var html = "";
-  pendingFiles.forEach(function(f, idx) {
-    var ext = (f.name || "").split(".").pop().toLowerCase();
+  var bar = document.getElementById("filePreviewBar"); var btn = document.getElementById("btnAttach");
+  if (pendingFiles.length === 0) { bar.style.display = "none"; btn.classList.remove("has-files"); return; }
+  bar.style.display = "flex"; btn.classList.add("has-files"); var html = "";
+  pendingFiles.forEach(function(f, idx) { var ext = (f.name || "").split(".").pop().toLowerCase();
     var cls = (ext==="xlsx"||ext==="xls"||ext==="xlsm") ? "xlsx" : (ext==="csv"?"csv":"other");
     var icon = cls==="xlsx" ? "XLS" : (cls==="csv" ? "CSV" : "DOC");
-    html += '<div class="file-preview">';
-    html += '<div class="fp-icon ' + cls + '">' + icon + '</div>';
-    html += '<span class="fp-name">' + escapeHtml(f.name) + '</span>';
-    html += '<span class="fp-size">' + formatSize(f.size) + '</span>';
-    html += '<button class="fp-remove" onclick="removeFile(' + idx + ')">&times;</button>';
-    html += '</div>';
+    html += '<div class="file-preview"><div class="fp-icon ' + cls + '">' + icon + '</div>';
+    html += '<span class="fp-name">' + escapeHtml(f.name) + '</span><span class="fp-size">' + formatSize(f.size) + '</span>';
+    html += '<button class="fp-remove" onclick="removeFile(' + idx + ')">&#215;</button></div>';
   });
   bar.innerHTML = html;
 }
-
-function removeFile(idx) {
-  pendingFiles.splice(idx, 1);
-  renderFilePreview();
-}
-
-// Drag & drop
-var mainPanel = null;
+function removeFile(idx) { pendingFiles.splice(idx, 1); renderFilePreview(); }
 function setupDragDrop() {
-  mainPanel = document.getElementById("mainPanel");
-  var overlay = document.getElementById("dropOverlay");
-  var dragCounter = 0;
-
-  mainPanel.addEventListener("dragenter", function(e) {
-    e.preventDefault(); e.stopPropagation();
-    dragCounter++;
-    overlay.classList.add("visible");
-  });
-  mainPanel.addEventListener("dragleave", function(e) {
-    e.preventDefault(); e.stopPropagation();
-    dragCounter--;
-    if (dragCounter <= 0) { overlay.classList.remove("visible"); dragCounter = 0; }
-  });
-  mainPanel.addEventListener("dragover", function(e) {
-    e.preventDefault(); e.stopPropagation();
-  });
-  mainPanel.addEventListener("drop", function(e) {
-    e.preventDefault(); e.stopPropagation();
-    overlay.classList.remove("visible");
-    dragCounter = 0;
-    var files = e.dataTransfer.files;
-    if (files && files.length) {
-      for (var i = 0; i < files.length; i++) {
-        pendingFiles.push(files[i]);
-      }
-      renderFilePreview();
-    }
+  var mainPanel = document.getElementById("mainPanel"); var overlay = document.getElementById("dropOverlay"); var dragCounter = 0;
+  mainPanel.addEventListener("dragenter", function(e) { e.preventDefault(); e.stopPropagation(); dragCounter++; overlay.classList.add("visible"); });
+  mainPanel.addEventListener("dragleave", function(e) { e.preventDefault(); e.stopPropagation(); dragCounter--; if (dragCounter <= 0) { overlay.classList.remove("visible"); dragCounter = 0; } });
+  mainPanel.addEventListener("dragover", function(e) { e.preventDefault(); e.stopPropagation(); });
+  mainPanel.addEventListener("drop", function(e) { e.preventDefault(); e.stopPropagation(); overlay.classList.remove("visible"); dragCounter = 0;
+    var files = e.dataTransfer.files; if (files && files.length) { for (var i = 0; i < files.length; i++) { pendingFiles.push(files[i]); } renderFilePreview(); }
   });
 }
-
-// Upload file to server and get extracted content
 async function uploadFileForContext(file) {
-  var formData = new FormData();
-  formData.append("file", file);
+  var formData = new FormData(); formData.append("file", file);
   try {
-    var resp = await fetch(API_BASE + "/ai/agent/upload", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + ANON_KEY },
-      body: formData
-    });
-    var data = await resp.json();
-    if (data.success) return data.extractedContent;
-    console.error("File upload error:", data.error);
-    return "[Failed to parse file: " + file.name + "]";
-  } catch(err) {
-    console.error("File upload error:", err);
-    return "[Upload error for " + file.name + ": " + err.message + "]";
-  }
+    var resp = await fetch(API_BASE + "/ai/agent/upload", { method: "POST", headers: { "Authorization": "Bearer " + ANON_KEY }, body: formData });
+    var data = await resp.json(); if (data.success) return data.extractedContent;
+    console.error("File upload error:", data.error); return "[Failed to parse file: " + file.name + "]";
+  } catch(err) { console.error("File upload error:", err); return "[Upload error for " + file.name + ": " + err.message + "]"; }
 }
 
-// ── Quick model chips ────────────────────────────────
 var QUICK_PROMPTS = {
   "LBO":"Build an LBO model for a $50M EBITDA company at 10x entry with 5-year hold",
   "DCF":"Build a DCF valuation model with 5-year projections and sensitivity analysis",
-  "M&A":"Build an M&A merger model with accretion/dilution analysis",
+  "M\u0026A":"Build an M&A merger model with accretion/dilution analysis",
   "Variance":"Build a budget vs actual variance analysis with flagging",
   "Comps":"Build a comparable company analysis with trading multiples",
   "3-Stmt":"Build a linked 3-statement financial model (IS, BS, CF)"
 };
+function insertQuick(type) { document.querySelectorAll(".quick-chip").forEach(function(c){c.classList.remove("active")});
+  event.target.classList.add("active"); document.getElementById("inputField").value = QUICK_PROMPTS[type] || "";
+  document.getElementById("inputField").focus(); autoResize(document.getElementById("inputField")); }
 
-function insertQuick(type) {
-  document.querySelectorAll(".quick-chip").forEach(function(c){c.classList.remove("active")});
-  event.target.classList.add("active");
-  document.getElementById("inputField").value = QUICK_PROMPTS[type] || "";
-  document.getElementById("inputField").focus();
-  autoResize(document.getElementById("inputField"));
-}
-
-// ── Core Agent Loop ──────────────────────────────────
 async function sendMessage() {
-  var input = document.getElementById("inputField");
-  var prompt = input.value.trim();
+  var input = document.getElementById("inputField"); var prompt = input.value.trim();
   if (!prompt || isRunning) return;
-
-  // Ensure we have an active conversation
   var conv = getActiveConv();
-  if (!conv) {
-    createNewChat();
-    conv = getActiveConv();
-  }
-
-  input.value = "";
-  autoResize(input);
-  setRunning(true);
-
-  // Handle files — upload them and get extracted content
+  if (!conv) { createNewChat(); conv = getActiveConv(); }
+  input.value = ""; autoResize(input); setRunning(true);
   var fileContextParts = [];
   var fileInfos = pendingFiles.map(function(f) { return { name: f.name, size: f.size }; });
   if (pendingFiles.length > 0) {
-    for (var i = 0; i < pendingFiles.length; i++) {
-      var content = await uploadFileForContext(pendingFiles[i]);
-      fileContextParts.push(content);
-    }
-    pendingFiles = [];
-    renderFilePreview();
+    for (var i = 0; i < pendingFiles.length; i++) { var content = await uploadFileForContext(pendingFiles[i]); fileContextParts.push(content); }
+    pendingFiles = []; renderFilePreview();
   }
-
-  // Build the full prompt with file context
   var fullPrompt = prompt;
-  if (fileContextParts.length > 0) {
-    fullPrompt = "<uploaded_files>\n" + fileContextParts.join("\n\n") + "\n</uploaded_files>\n\n" + prompt;
-  }
-
-  // Store in conversation and render
+  if (fileContextParts.length > 0) { fullPrompt = "<uploaded_files>\n" + fileContextParts.join("\n\n") + "\n</uploaded_files>\n\n" + prompt; }
   conv.messages.push({ role: "user", content: prompt, files: fileInfos.length ? fileInfos : undefined, ts: Date.now() });
-  // Update title from first message
   if (conv.messages.filter(function(m){return m.role==="user"}).length === 1) {
     conv.title = prompt.substring(0, 40) + (prompt.length > 40 ? "..." : "");
   }
-  conv.updatedAt = new Date().toISOString();
-  saveConversations();
-  renderSidebar();
+  conv.updatedAt = new Date().toISOString(); saveConversations(); renderSidebar();
   addMessageToDOM("user", prompt, fileInfos.length ? fileInfos : null);
-
-  // Capture lightweight workbook metadata
   var wbContext = null;
   try { wbContext = await getWorkbookMetadata(); } catch(e) { console.error("Metadata error:", e); }
-
   addThinking();
-
   try {
-    // Initial agent call
-    var resp = await fetch(API_BASE + "/ai/agent", {
-      method: "POST",
-      headers: AUTH,
-      body: JSON.stringify({
-        sessionId: conv.sessionId,
-        workbookContext: wbContext,
-        prompt: fullPrompt,
-        modelType: detectModelType(prompt)
-      })
+    var resp = await fetch(API_BASE + "/ai/agent", { method: "POST", headers: AUTH,
+      body: JSON.stringify({ sessionId: conv.sessionId, workbookContext: wbContext, prompt: fullPrompt, modelType: detectModelType(prompt) })
     }).then(function(r){return r.json()});
-
-    conv.sessionId = resp.sessionId || conv.sessionId;
-    saveConversations();
-
-    // Agent loop: keep going while we get tool_calls
-    var maxIterations = 30;
-    var iteration = 0;
-
+    conv.sessionId = resp.sessionId || conv.sessionId; saveConversations();
+    var maxIterations = 30; var iteration = 0;
     while (resp.type === "tool_calls" && iteration < maxIterations) {
-      iteration++;
-      removeThinking();
-
-      var toolCalls = resp.toolCalls || [];
-      addToolCallUI(toolCalls);
-
-      // Store tool calls in conversation
-      conv.messages.push({
-        role: "tool_calls",
-        content: "",
-        toolCalls: toolCalls.map(function(tc) { return { id: tc.id, name: tc.name, arguments: tc.arguments, status: "running" }; }),
-        ts: Date.now()
-      });
-
-      // Execute all tool calls
+      iteration++; removeThinking();
+      var toolCalls = resp.toolCalls || []; addToolCallUI(toolCalls);
+      conv.messages.push({ role: "tool_calls", content: "",
+        toolCalls: toolCalls.map(function(tc) { return { id: tc.id, name: tc.name, arguments: tc.arguments, status: "running" }; }), ts: Date.now() });
       var toolResults = [];
-      for (var i = 0; i < toolCalls.length; i++) {
-        var tc = toolCalls[i];
-        try {
-          var result = await executeTool(tc.name, tc.arguments);
-          updateToolStatus(tc.id, "done");
+      for (var i = 0; i < toolCalls.length; i++) { var tc = toolCalls[i];
+        try { var result = await executeTool(tc.name, tc.arguments); updateToolStatus(tc.id, "done");
           toolResults.push({ toolCallId: tc.id, result: JSON.stringify(result) });
-          // Update stored tool call status
-          var lastToolMsg = conv.messages[conv.messages.length - 1];
-          if (lastToolMsg && lastToolMsg.toolCalls) {
-            var stored = lastToolMsg.toolCalls.find(function(t){return t.id === tc.id});
-            if (stored) stored.status = "done";
-          }
-        } catch (err) {
-          updateToolStatus(tc.id, "error");
-          toolResults.push({ toolCallId: tc.id, result: JSON.stringify({success:false, error:err.message}) });
-          var lastToolMsg2 = conv.messages[conv.messages.length - 1];
-          if (lastToolMsg2 && lastToolMsg2.toolCalls) {
-            var stored2 = lastToolMsg2.toolCalls.find(function(t){return t.id === tc.id});
-            if (stored2) stored2.status = "error";
-          }
+          var lastToolMsg = conv.messages[conv.messages.length - 1]; if (lastToolMsg && lastToolMsg.toolCalls) { var stored = lastToolMsg.toolCalls.find(function(t){return t.id === tc.id}); if (stored) stored.status = "done"; }
+        } catch (err) { updateToolStatus(tc.id, "error"); toolResults.push({ toolCallId: tc.id, result: JSON.stringify({success:false, error:err.message}) });
+          var lastToolMsg2 = conv.messages[conv.messages.length - 1]; if (lastToolMsg2 && lastToolMsg2.toolCalls) { var stored2 = lastToolMsg2.toolCalls.find(function(t){return t.id === tc.id}); if (stored2) stored2.status = "error"; }
         }
       }
-
-      addThinking();
-      saveConversations();
-
-      // Send results back to server for next step
-      resp = await fetch(API_BASE + "/ai/agent/continue", {
-        method: "POST",
-        headers: AUTH,
-        body: JSON.stringify({
-          sessionId: conv.sessionId,
-          toolResults: toolResults
-        })
+      addThinking(); saveConversations();
+      resp = await fetch(API_BASE + "/ai/agent/continue", { method: "POST", headers: AUTH,
+        body: JSON.stringify({ sessionId: conv.sessionId, toolResults: toolResults })
       }).then(function(r){return r.json()});
     }
-
     removeThinking();
-
-    // Final response
-    if (resp.type === "message" && resp.message) {
-      addMessageToDOM("assistant", resp.message);
-      conv.messages.push({ role: "assistant", content: resp.message, ts: Date.now() });
-    } else if (resp.type === "error") {
-      var errMsg = "Error: " + (resp.error || "Unknown error");
-      addMessageToDOM("assistant", errMsg);
-      conv.messages.push({ role: "assistant", content: errMsg, ts: Date.now() });
-    }
-
-  } catch (err) {
-    removeThinking();
-    var errMsg2 = "Connection error: " + err.message;
-    addMessageToDOM("assistant", errMsg2);
-    conv.messages.push({ role: "assistant", content: errMsg2, ts: Date.now() });
-    console.error("Agent error:", err);
-  }
-
-  conv.updatedAt = new Date().toISOString();
-  saveConversations();
-  renderSidebar();
-  setRunning(false);
+    if (resp.type === "message" && resp.message) { addMessageToDOM("assistant", resp.message); conv.messages.push({ role: "assistant", content: resp.message, ts: Date.now() }); }
+    else if (resp.type === "error") { var errMsg = "Error: " + (resp.error || "Unknown error"); addMessageToDOM("assistant", errMsg); conv.messages.push({ role: "assistant", content: errMsg, ts: Date.now() }); }
+  } catch (err) { removeThinking(); var errMsg2 = "Connection error: " + err.message; addMessageToDOM("assistant", errMsg2); conv.messages.push({ role: "assistant", content: errMsg2, ts: Date.now() }); console.error("Agent error:", err); }
+  conv.updatedAt = new Date().toISOString(); saveConversations(); renderSidebar(); setRunning(false);
 }
-
-function detectModelType(prompt) {
-  var p = prompt.toLowerCase();
+function detectModelType(prompt) { var p = prompt.toLowerCase();
   if (p.indexOf("lbo")>-1 || p.indexOf("leveraged buyout")>-1) return "LBO";
   if (p.indexOf("dcf")>-1 || p.indexOf("discounted cash")>-1) return "DCF";
   if (p.indexOf("m&a")>-1 || p.indexOf("merger")>-1 || p.indexOf("acquisition")>-1) return "M&A";
@@ -1289,61 +846,36 @@ function detectModelType(prompt) {
   if (p.indexOf("3-statement")>-1 || p.indexOf("three statement")>-1 || p.indexOf("3 statement")>-1) return "3-Statement";
   return null;
 }
-
-// ── Health check ─────────────────────────────────────
 function checkConnection() {
-  fetch(API_BASE + "/health", { headers: AUTH })
-    .then(function(r){return r.json()})
-    .then(function(d) {
-      if (d.status === "ok") {
-        document.getElementById("statusPill").className = "status-pill online";
-        document.getElementById("statusText").textContent = "Online";
-      }
-    })
-    .catch(function() {
-      document.getElementById("statusPill").className = "status-pill offline";
-      document.getElementById("statusText").textContent = "Offline";
-    });
+  fetch(API_BASE + "/health", { headers: AUTH }).then(function(r){return r.json()}).then(function(d) {
+    if (d.status === "ok") { document.getElementById("statusPill").className = "status-pill online"; document.getElementById("statusText").textContent = "Online"; }
+  }).catch(function() { document.getElementById("statusPill").className = "status-pill offline"; document.getElementById("statusText").textContent = "Offline"; });
 }
 
-// ── Init ─────────────────────────────────────────────
 Office.onReady(function(info) {
   console.log("[MF Agent] Office.onReady, host=" + info.host);
   document.getElementById("loading").style.display = "none";
   document.getElementById("app").style.display = "flex";
-  loadConversations();
-  renderSidebar();
-  // Auto-create a new chat if none exist
-  if (!activeConvId && conversations.length === 0) {
-    createNewChat();
-  } else if (!activeConvId && conversations.length > 0) {
-    activeConvId = conversations[0].id;
-  }
-  renderChat();
-  setupDragDrop();
-  checkConnection();
+  loadConversations(); renderSidebar();
+  if (!activeConvId && conversations.length === 0) { createNewChat(); }
+  else if (!activeConvId && conversations.length > 0) { activeConvId = conversations[0].id; }
+  renderChat(); setupDragDrop(); checkConnection();
   document.getElementById("inputField").focus();
 });
 
-// Fallback for browser testing
 setTimeout(function() {
   if (document.getElementById("loading").style.display !== "none") {
     document.getElementById("loading").style.display = "none";
     document.getElementById("app").style.display = "flex";
     document.getElementById("statusText").textContent = "Browser";
     document.getElementById("statusPill").className = "status-pill offline";
-    loadConversations();
-    renderSidebar();
-    if (!activeConvId && conversations.length === 0) {
-      createNewChat();
-    } else if (!activeConvId && conversations.length > 0) {
-      activeConvId = conversations[0].id;
-    }
-    renderChat();
-    setupDragDrop();
-    checkConnection();
+    loadConversations(); renderSidebar();
+    if (!activeConvId && conversations.length === 0) { createNewChat(); }
+    else if (!activeConvId && conversations.length > 0) { activeConvId = conversations[0].id; }
+    renderChat(); setupDragDrop(); checkConnection();
   }
 }, 3000);
+//]]>
 </script>
 </body>
 </html>

@@ -1,1021 +1,574 @@
-import { Hono } from "npm:hono";
-import { cors } from "npm:hono/cors";
-import { logger } from "npm:hono/logger";
-import { createClient } from "jsr:@supabase/supabase-js@2.49.8";
-import JSZip from "npm:jszip@3.10.1";
-import * as kv from "./kv_store.tsx";
-import { generateManifestXml, generateTaskpaneHtml, generateReadmeText, generateServeScript } from "./addin_generator.tsx";
-import { runAgentStep } from "./excel_agent.tsx";
-import { generateAgentTaskpaneHtml } from "./taskpane_content.tsx";
-import {
-  extractTrainingPatterns,
-  getTrainingPatterns,
-  generateFinancialModel,
-  modelToCellData,
-  getModelTypes,
-} from "./ai_engine.tsx";
-import { parseExcelBuffer, extractRealPatterns } from "./xlsx_parser.tsx";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ModelForge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#f5f5f5;--fg:#18181b;--card:#fff;--muted:#71717a;--border:#e5e5e5;
+--blue:#0485f7;--green:#10b981;--red:#ef4444;--amber:#f59e0b;--purple:#a855f7;
+--radius:10px;--radius-lg:14px;--radius-pill:20px;
+}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--fg);font-size:13px;line-height:1.5;overflow-x:hidden}
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.header-left{display:flex;align-items:center;gap:8px}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:11px}
+.header-title{font-weight:700;font-size:14px;letter-spacing:-0.02em}
+.status-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:600;background:rgba(16,185,129,.1);color:var(--green)}
+.status-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Quick Start Cards */
+.section{padding:16px}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quick-card{background:var(--card);border-radius:var(--radius);padding:12px;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.quick-card:hover{border-color:var(--blue);transform:translateY(-1px)}
+.quick-card.active{border-color:var(--blue);background:rgba(4,133,247,.04)}
+.quick-card .qc-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:6px}
+.quick-card .qc-title{font-weight:700;font-size:12px;margin-bottom:2px}
+.quick-card .qc-sub{font-size:10px;color:var(--muted);line-height:1.3}
+.qc-lbo .qc-icon{background:rgba(4,133,247,.1);color:var(--blue)}
+.qc-dcf .qc-icon{background:rgba(16,185,129,.1);color:var(--green)}
+.qc-ma .qc-icon{background:rgba(168,85,247,.1);color:var(--purple)}
+.qc-var .qc-icon{background:rgba(245,158,11,.1);color:var(--amber)}
+.qc-comps .qc-icon{background:rgba(239,68,68,.1);color:var(--red)}
+.qc-stmt .qc-icon{background:rgba(113,113,122,.1);color:var(--muted)}
+/* Build Form */
+.build-form{background:var(--card);border-radius:var(--radius-lg);margin:0 16px;padding:16px;border:1px solid var(--border)}
+.form-row{margin-bottom:12px}
+.form-row:last-child{margin-bottom:0}
+.form-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;display:block}
+.form-input,.form-select,.form-textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;background:var(--bg);color:var(--fg);outline:none;transition:border-color .15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--blue);background:var(--card)}
+.form-textarea{resize:vertical;min-height:72px;line-height:1.5}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.form-row-2col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* Primary CTA */
+.btn-build{width:100%;padding:12px 16px;border-radius:var(--radius-pill);border:none;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;margin-top:4px}
+.btn-build.primary{background:var(--blue);color:#fff}
+.btn-build.primary:hover{opacity:.92;transform:translateY(-1px)}
+.btn-build:disabled{opacity:.5;cursor:not-allowed;transform:none}
+/* Live Build Progress */
+.build-progress{background:var(--card);border-radius:var(--radius-lg);margin:16px;padding:16px;border:1px solid var(--border);display:none}
+.build-progress.active{display:block}
+.bp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.bp-title{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+.bp-title .spinner{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite}
+.bp-pct{font-size:12px;font-weight:700;color:var(--blue)}
+.bp-bar-track{height:4px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:14px}
+.bp-bar-fill{height:100%;background:var(--blue);border-radius:4px;transition:width .3s ease;width:0%}
+.bp-steps{list-style:none}
+.bp-step{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+.bp-step .step-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.bp-step.pending .step-icon{background:var(--bg);color:var(--muted)}
+.bp-step.active .step-icon{background:rgba(4,133,247,.15);color:var(--blue);animation:pulse 1s infinite}
+.bp-step.done .step-icon{background:rgba(16,185,129,.15);color:var(--green)}
+.bp-step.active .step-label{font-weight:600;color:var(--fg)}
+.bp-step.done .step-label{color:var(--muted)}
+.bp-step.pending .step-label{color:var(--muted)}
+.bp-cell-count{font-size:11px;color:var(--muted);text-align:center;margin-top:10px}
+/* Result Card */
+.result-card{background:var(--card);border-radius:var(--radius-lg);margin:0 16px 16px;padding:16px;border:1px solid rgba(16,185,129,.2);display:none}
+.result-card.active{display:block}
+.rc-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rc-check{width:28px;height:28px;border-radius:50%;background:rgba(16,185,129,.12);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:14px}
+.rc-title{font-weight:700;font-size:14px}
+.rc-meta{font-size:11px;color:var(--muted)}
+.rc-sheets{list-style:none;margin:10px 0}
+.rc-sheets li{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:12px}
+.rc-sheets li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+.rc-sheets .sheet-rows{color:var(--muted);font-size:11px;margin-left:auto}
+.btn-secondary{width:100%;padding:10px;border-radius:var(--radius-pill);border:1px solid var(--border);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--card);color:var(--fg);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;margin-top:8px}
+.btn-secondary:hover{background:var(--bg)}
+/* Training Context */
+.training-strip{margin:0 16px;padding:10px 12px;background:var(--card);border-radius:var(--radius);display:flex;align-items:center;gap:8px;border:1px solid var(--border)}
+.training-strip .ts-badge{padding:3px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:600;white-space:nowrap}
+.training-strip .ts-text{font-size:11px;color:var(--muted);flex:1;min-width:0}
+.ts-ok .ts-badge{background:rgba(16,185,129,.1);color:var(--green)}
+.ts-warn .ts-badge{background:rgba(245,158,11,.1);color:var(--amber)}
+/* Loading / Error */
+#loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:12px}
+.spinner-lg{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-text{font-size:12px;color:var(--muted)}
+#app{display:none}
+#error{display:none;padding:24px;text-align:center;color:var(--red);font-size:12px}
+.gap-12{height:12px}
+.gap-16{height:16px}
+</style>
+</head>
+<body>
+<div id="loading"><div class="spinner-lg"></div><div id="loading-text">Connecting to Excel...</div></div>
+<div id="error"><p>Failed to initialize. Sideload the manifest.xml in Excel first.</p></div>
+<div id="app">
 
-const app = new Hono();
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">MF</div>
+    <span class="header-title">ModelForge</span>
+  </div>
+  <div class="status-pill" id="statusPill">
+    <div class="status-dot"></div>
+    <span id="statusText">Connected</span>
+  </div>
+</div>
 
-// Enable logger
-app.use("*", logger(console.log));
+<!-- Quick Start -->
+<div class="section">
+  <div class="section-title">Build a Model</div>
+  <div class="quick-grid">
+    <div class="quick-card qc-lbo" onclick="selectQuick('LBO')">
+      <div class="qc-icon">&#x1F4C8;</div>
+      <div class="qc-title">LBO</div>
+      <div class="qc-sub">6 sheets &middot; IRR, MOIC, debt waterfall</div>
+    </div>
+    <div class="quick-card qc-dcf" onclick="selectQuick('DCF')">
+      <div class="qc-icon">&#x1F4B0;</div>
+      <div class="qc-title">DCF</div>
+      <div class="qc-sub">4 sheets &middot; WACC, terminal value</div>
+    </div>
+    <div class="quick-card qc-ma" onclick="selectQuick('M&A')">
+      <div class="qc-icon">&#x1F91D;</div>
+      <div class="qc-title">M&amp;A</div>
+      <div class="qc-sub">6 sheets &middot; accretion/dilution</div>
+    </div>
+    <div class="quick-card qc-var" onclick="selectQuick('Variance')">
+      <div class="qc-icon">&#x1F4CA;</div>
+      <div class="qc-title">Variance</div>
+      <div class="qc-sub">3 sheets &middot; budget vs actual</div>
+    </div>
+    <div class="quick-card qc-comps" onclick="selectQuick('Comps')">
+      <div class="qc-icon">&#x1F4CB;</div>
+      <div class="qc-title">Comps</div>
+      <div class="qc-sub">5 sheets &middot; trading multiples</div>
+    </div>
+    <div class="quick-card qc-stmt" onclick="selectQuick('3-Statement')">
+      <div class="qc-icon">&#x1F4D1;</div>
+      <div class="qc-title">3-Stmt</div>
+      <div class="qc-sub">6 sheets &middot; IS, BS, CF linked</div>
+    </div>
+  </div>
+</div>
 
-// Enable CORS for all routes and methods
-app.use(
-  "/*",
-  cors({
-    origin: "*",
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["Content-Length", "Content-Disposition"],
-    maxAge: 600,
+<!-- Build Form -->
+<div class="build-form" id="buildForm">
+  <div class="form-row form-row-2col">
+    <div>
+      <label class="form-label">Model Type</label>
+      <select class="form-select" id="fModelType">
+        <option value="LBO">LBO</option>
+        <option value="DCF">DCF</option>
+        <option value="M&A">M&amp;A</option>
+        <option value="Variance">Variance</option>
+        <option value="Comps">Comps</option>
+        <option value="3-Statement">3-Statement</option>
+      </select>
+    </div>
+    <div>
+      <label class="form-label">Industry</label>
+      <input class="form-input" id="fIndustry" placeholder="e.g. SaaS, Healthcare">
+    </div>
+  </div>
+  <div class="form-row">
+    <label class="form-label">Company Name</label>
+    <input class="form-input" id="fCompany" placeholder="e.g. Acme Corp">
+  </div>
+  <div class="form-row">
+    <label class="form-label">Describe Your Model</label>
+    <textarea class="form-textarea" id="fPrompt" placeholder="e.g. $50M EBITDA software company, 12x entry, 5-year hold, targeting 25% IRR"></textarea>
+  </div>
+  <div class="form-row">
+    <button class="btn-build primary" id="btnBuild" onclick="buildModel()">
+      <span id="btnBuildText">Build in Excel</span>
+    </button>
+  </div>
+</div>
+
+<div class="gap-12"></div>
+
+<!-- Training context strip -->
+<div class="training-strip ts-warn" id="trainingStrip">
+  <div class="ts-badge" id="tsBadge">Loading...</div>
+  <div class="ts-text" id="tsText">Checking platform training data</div>
+</div>
+
+<div class="gap-16"></div>
+
+<!-- Live Build Progress -->
+<div class="build-progress" id="buildProgress">
+  <div class="bp-header">
+    <div class="bp-title"><div class="spinner"></div> <span id="bpTitle">Generating model...</span></div>
+    <div class="bp-pct" id="bpPct">0%</div>
+  </div>
+  <div class="bp-bar-track"><div class="bp-bar-fill" id="bpBar"></div></div>
+  <ul class="bp-steps" id="bpSteps"></ul>
+  <div class="bp-cell-count" id="bpCells"></div>
+</div>
+
+<!-- Result Card -->
+<div class="result-card" id="resultCard">
+  <div class="rc-header">
+    <div class="rc-check">&#x2713;</div>
+    <div>
+      <div class="rc-title" id="rcTitle">Model Complete</div>
+      <div class="rc-meta" id="rcMeta"></div>
+    </div>
+  </div>
+  <ul class="rc-sheets" id="rcSheets"></ul>
+  <button class="btn-secondary" onclick="resetForm()">Build Another Model</button>
+</div>
+
+</div><!-- /app -->
+
+<script>
+/* ─── Configuration ─── */
+var API_BASE = "https://rwmxzasmtalgocuotfke.supabase.co/functions/v1/make-server-f3f66941";
+var ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3bXh6YXNtdGFsZ29jdW90ZmtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwMjk1MzYsImV4cCI6MjA4NjYwNTUzNn0.avix-4C1VBu0wJ-QZToWmkgq9jpHuQJu1axhQ4XDHyg";
+var AUTH = {"Content-Type":"application/json","Authorization":"Bearer "+ANON_KEY};
+var generated = null, cellData = null;
+
+/* ─── Prompt templates ─── */
+var TEMPLATES = {
+  "LBO":"Create an LBO model. Entry at {mult}x EBITDA, 5-year hold. Include Sources & Uses, operating projections, debt waterfall with TLA/TLB/Mezz tranches, cash flow sweep, IRR and MOIC sensitivity tables.",
+  "DCF":"Create a DCF valuation model. 5-year projection with revenue growth tapering, EBITDA margins, unlevered FCF waterfall, WACC-based discounting, Gordon Growth terminal value, and a WACC vs terminal growth sensitivity table.",
+  "M&A":"Create an M&A merger model. Include standalone valuations for acquirer and target, transaction assumptions with cash/stock mix, pro forma income statement, accretion/dilution analysis, and synergy schedule.",
+  "Variance":"Create a budget vs actual variance analysis. Include line-by-line variance summary with dollar and percentage variances, flagging (critical/warning/on-track), executive summary with top unfavorable items, and trend analysis.",
+  "Comps":"Create a comparable company analysis. Include peer selection with 6-8 public companies, financial summary, valuation multiples (EV/Revenue, EV/EBITDA, P/E), implied valuation range, and football field chart data.",
+  "3-Statement":"Create a 3-statement financial model. Include a linked Income Statement, Balance Sheet, and Cash Flow Statement with supporting schedules for working capital, depreciation, and debt."
+};
+var DEFAULT_MULTS = {"LBO":"10","DCF":"","M&A":"","Variance":"","Comps":"","3-Statement":""};
+
+/* ─── Quick Start ─── */
+function selectQuick(type) {
+  document.querySelectorAll('.quick-card').forEach(function(c){c.classList.remove('active')});
+  var cls = {'LBO':'qc-lbo','DCF':'qc-dcf','M&A':'qc-ma','Variance':'qc-var','Comps':'qc-comps','3-Statement':'qc-stmt'};
+  var el = document.querySelector('.'+cls[type]);
+  if(el) el.classList.add('active');
+  document.getElementById('fModelType').value = type;
+  var tpl = TEMPLATES[type]||'';
+  if(DEFAULT_MULTS[type]) tpl = tpl.replace('{mult}',DEFAULT_MULTS[type]);
+  else tpl = tpl.replace('{mult}','10');
+  document.getElementById('fPrompt').value = tpl;
+  document.getElementById('fPrompt').focus();
+  document.getElementById('buildForm').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ─── Build Model (Generate + Live Populate) ─── */
+function buildModel() {
+  var prompt = document.getElementById('fPrompt').value.trim();
+  var modelType = document.getElementById('fModelType').value;
+  var company = document.getElementById('fCompany').value.trim();
+  var industry = document.getElementById('fIndustry').value.trim();
+  if(!prompt){alert('Describe the model you want to build.');return;}
+
+  var btn = document.getElementById('btnBuild');
+  btn.disabled = true;
+  document.getElementById('btnBuildText').textContent = 'Generating...';
+
+  // Show progress
+  var prog = document.getElementById('buildProgress');
+  prog.classList.add('active');
+  document.getElementById('resultCard').classList.remove('active');
+  setProgress(0, 'Sending to GPT...');
+  setSteps([
+    {id:'gen',label:'Generating model with GPT',status:'active'},
+    {id:'sheets',label:'Creating sheets in Excel',status:'pending'},
+    {id:'cells',label:'Writing cells & formulas',status:'pending'},
+    {id:'format',label:'Formatting & finishing',status:'pending'}
+  ]);
+  prog.scrollIntoView({behavior:'smooth',block:'center'});
+
+  // Simulate generation progress while waiting
+  var genTimer = setInterval(function(){
+    var bar = document.getElementById('bpBar');
+    var w = parseFloat(bar.style.width)||0;
+    if(w<25) bar.style.width = (w+0.5)+'%';
+    document.getElementById('bpPct').textContent = Math.round(parseFloat(bar.style.width))+'%';
+  },200);
+
+  fetch(API_BASE+"/ai/generate",{method:"POST",headers:AUTH,body:JSON.stringify({
+    prompt:prompt,modelType:modelType,companyName:company||undefined,industry:industry||undefined
+  })})
+  .then(function(r){return r.json()})
+  .then(function(data){
+    clearInterval(genTimer);
+    if(data.error) throw new Error(data.error);
+    generated = data.model;
+    cellData = data.cellData;
+    stepDone('gen');
+    setProgress(30,'Model generated! Building in Excel...');
+    populateLive();
   })
-);
-
-// Supabase admin client (for auth operations)
-const supabaseAdmin = () =>
-  createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
-
-// Storage bucket name
-const TRAINING_BUCKET = "make-f3f66941-training-models";
-
-// Public bucket for add-in manifest (XML MIME is fine — Supabase doesn't normalise it).
-// The taskpane HTML itself is hosted on GitHub Pages to guarantee correct text/html MIME.
-const ADDIN_PUBLIC_BUCKET = "make-f3f66941-addin-public";
-
-// ── Taskpane Hosting Strategy ────────────────────────────
-// The taskpane HTML is hosted on GitHub Pages (emad-log.github.io/modelforge-addin).
-// GitHub Pages guarantees correct Content-Type: text/html, which Supabase Storage cannot.
-// The server generates the HTML on-demand for download; users commit it to their GitHub repo.
-// A cached override URL can be stored in KV for custom deployments.
-let CACHED_PLATFORM_TASKPANE_URL = "";
-
-// Load any custom override URL from KV on startup
-(async () => {
-  try {
-    const stored = await kv.get("platform:taskpane-url");
-    if (stored) {
-      CACHED_PLATFORM_TASKPANE_URL = String(stored);
-      console.log(`Custom taskpane URL override from KV: ${CACHED_PLATFORM_TASKPANE_URL}`);
-    }
-  } catch (err) {
-    console.log(`Startup init warning (non-fatal): ${err}`);
-  }
-})();
-
-// Helper: get the best available taskpane URL
-function getTaskpaneUrl(override?: string): string {
-  return override || CACHED_PLATFORM_TASKPANE_URL || "";
-}
-
-// Helper: verify auth and get user ID
-async function getAuthUser(request: Request): Promise<{ id: string; email: string } | null> {
-  const accessToken = request.headers.get("Authorization")?.split(" ")[1];
-  if (!accessToken) return null;
-  const supabase = supabaseAdmin();
-  const { data, error } = await supabase.auth.getUser(accessToken);
-  if (error || !data?.user?.id) return null;
-  return { id: data.user.id, email: data.user.email || "" };
-}
-
-// ── Health check ────────────────────────────────────────
-app.get("/make-server-f3f66941/health", (c) => {
-  return c.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// ── Auth: Sign Up ───────────────────────────────────────
-app.post("/make-server-f3f66941/auth/signup", async (c) => {
-  try {
-    const { email, password, name, role } = await c.req.json();
-    if (!email || !password || !name) {
-      return c.json({ error: "Missing required fields: email, password, name" }, 400);
-    }
-    const supabase = supabaseAdmin();
-    const { data, error } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      user_metadata: { name, role: role || "Analyst" },
-      // Automatically confirm the user's email since an email server hasn't been configured.
-      email_confirm: true,
-    });
-    if (error) {
-      console.log(`Auth signup error for ${email}: ${error.message}`);
-      return c.json({ error: `Signup failed: ${error.message}` }, 400);
-    }
-
-    // Store user profile in KV
-    await kv.set(`user:${data.user.id}:profile`, {
-      id: data.user.id,
-      email,
-      name,
-      role: role || "Analyst",
-      initials: name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2),
-      createdAt: new Date().toISOString(),
-    });
-
-    console.log(`User created successfully: ${email}`);
-    return c.json({ user: data.user });
-  } catch (err) {
-    console.log(`Unexpected error during signup: ${err}`);
-    return c.json({ error: `Unexpected signup error: ${err}` }, 500);
-  }
-});
-
-// ── Models: List ────────────────────────────────────────
-app.get("/make-server-f3f66941/models", async (c) => {
-  try {
-    const models = await kv.getByPrefix("model:");
-    // Filter out version history entries, only return model objects
-    const modelList = models.filter((m: any) => m && m.id && !m.isVersion);
-    return c.json({ models: modelList });
-  } catch (err) {
-    console.log(`Error listing models: ${err}`);
-    return c.json({ error: `Failed to list models: ${err}` }, 500);
-  }
-});
-
-// ── Models: Get by ID ───────────────────────────────────
-app.get("/make-server-f3f66941/models/:id", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const model = await kv.get(`model:${id}`);
-    if (!model) {
-      return c.json({ error: `Model not found: ${id}` }, 404);
-    }
-    return c.json({ model });
-  } catch (err) {
-    console.log(`Error getting model ${c.req.param("id")}: ${err}`);
-    return c.json({ error: `Failed to get model: ${err}` }, 500);
-  }
-});
-
-// ── Models: Create / Update ─────────────────────────────
-app.post("/make-server-f3f66941/models", async (c) => {
-  try {
-    const body = await c.req.json();
-    const { id, name, type, deal, assumptions, status, assignee, assigneeName } = body;
-
-    if (!id || !name) {
-      return c.json({ error: "Missing required fields: id, name" }, 400);
-    }
-
-    // Check if model already exists for versioning
-    const existing = await kv.get(`model:${id}`);
-    const now = new Date().toISOString();
-
-    if (existing) {
-      // Save a version snapshot before overwriting
-      const versionKey = `model:${id}:v:${Date.now()}`;
-      await kv.set(versionKey, {
-        ...existing,
-        isVersion: true,
-        versionTimestamp: now,
-      });
-    }
-
-    const model = {
-      id,
-      name,
-      type: type || "LBO",
-      deal: deal || "",
-      assumptions: assumptions || {},
-      status: status || "Draft",
-      assignee: assignee || "",
-      assigneeName: assigneeName || "",
-      createdAt: existing?.createdAt || now,
-      updatedAt: now,
-      version: (existing?.version || 0) + 1,
-    };
-
-    await kv.set(`model:${id}`, model);
-
-    // Log activity
-    await logActivity({
-      action: existing ? "updated" : "created",
-      target: name,
-      user: assigneeName || "System",
-      modelId: id,
-    });
-
-    console.log(`Model ${existing ? "updated" : "created"}: ${name} (${id})`);
-    return c.json({ model });
-  } catch (err) {
-    console.log(`Error saving model: ${err}`);
-    return c.json({ error: `Failed to save model: ${err}` }, 500);
-  }
-});
-
-// ── Models: Delete ──────────────────────────────────────
-app.delete("/make-server-f3f66941/models/:id", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const model = await kv.get(`model:${id}`);
-    if (!model) {
-      return c.json({ error: `Model not found: ${id}` }, 404);
-    }
-
-    await kv.del(`model:${id}`);
-
-    await logActivity({
-      action: "deleted",
-      target: model.name,
-      user: model.assigneeName || "System",
-      modelId: id,
-    });
-
-    console.log(`Model deleted: ${model.name} (${id})`);
-    return c.json({ success: true });
-  } catch (err) {
-    console.log(`Error deleting model ${c.req.param("id")}: ${err}`);
-    return c.json({ error: `Failed to delete model: ${err}` }, 500);
-  }
-});
-
-// ── Models: Version History ─────────────────────────────
-app.get("/make-server-f3f66941/models/:id/versions", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const versions = await kv.getByPrefix(`model:${id}:v:`);
-    const sorted = versions
-      .filter((v: any) => v && v.isVersion)
-      .sort((a: any, b: any) => new Date(b.versionTimestamp).getTime() - new Date(a.versionTimestamp).getTime());
-    return c.json({ versions: sorted });
-  } catch (err) {
-    console.log(`Error getting versions for model ${c.req.param("id")}: ${err}`);
-    return c.json({ error: `Failed to get versions: ${err}` }, 500);
-  }
-});
-
-// ── Activity Feed ───────────────────────────────────────
-async function logActivity(entry: {
-  action: string;
-  target: string;
-  user: string;
-  modelId?: string;
-}) {
-  try {
-    const activityId = `activity:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
-    await kv.set(activityId, {
-      ...entry,
-      id: activityId,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.log(`Error logging activity: ${err}`);
-  }
-}
-
-app.get("/make-server-f3f66941/activity", async (c) => {
-  try {
-    const activities = await kv.getByPrefix("activity:");
-    const sorted = activities
-      .filter((a: any) => a && a.timestamp)
-      .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 20); // Last 20 activities
-    return c.json({ activities: sorted });
-  } catch (err) {
-    console.log(`Error listing activity: ${err}`);
-    return c.json({ error: `Failed to list activity: ${err}` }, 500);
-  }
-});
-
-// ── Sync Events (for Excel Hub) ─────────────────────────
-app.post("/make-server-f3f66941/sync/event", async (c) => {
-  try {
-    const { workbook, action, direction, user, modelId, success } = await c.req.json();
-    const syncId = `sync:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
-
-    await kv.set(syncId, {
-      id: syncId,
-      workbook,
-      action,
-      direction,
-      user,
-      modelId,
-      success: success !== false,
-      timestamp: new Date().toISOString(),
-    });
-
-    console.log(`Sync event logged: ${action} for ${workbook}`);
-    return c.json({ success: true });
-  } catch (err) {
-    console.log(`Error logging sync event: ${err}`);
-    return c.json({ error: `Failed to log sync event: ${err}` }, 500);
-  }
-});
-
-app.get("/make-server-f3f66941/sync/history", async (c) => {
-  try {
-    const events = await kv.getByPrefix("sync:");
-    const sorted = events
-      .filter((e: any) => e && e.timestamp)
-      .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 20);
-    return c.json({ events: sorted });
-  } catch (err) {
-    console.log(`Error listing sync history: ${err}`);
-    return c.json({ error: `Failed to list sync history: ${err}` }, 500);
-  }
-});
-
-// ── Seed demo data ─────────────────────────────────────
-// No-op — the platform starts empty. Users upload real models and create real data.
-app.post("/make-server-f3f66941/seed", async (c) => {
-  return c.json({ message: "Platform ready. Upload models to get started.", seeded: false });
-});
-
-// ── Excel Add-in: Centralized info (public URL + manifest) ──
-app.get("/make-server-f3f66941/addin/info", (c) => {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const apiBase = `${supabaseUrl}/functions/v1/make-server-f3f66941`;
-  const ghTaskpaneUrl = "https://emad-log.github.io/modelforge-addin/taskpane.html";
-  return c.json({
-    taskpaneUrl: ghTaskpaneUrl,
-    manifestDownloadUrl: `${apiBase}/addin/manifest`,
-    hosting: "github-pages",
-    githubRepo: "https://github.com/Emad-log/modelforge-addin",
-    description: "Taskpane hosted on GitHub Pages at emad-log.github.io. Commit taskpane.html to update.",
+  .catch(function(err){
+    clearInterval(genTimer);
+    console.error('Generation error:',err);
+    alert('Generation failed: '+err.message);
+    btn.disabled = false;
+    document.getElementById('btnBuildText').textContent = 'Build in Excel';
+    prog.classList.remove('active');
   });
-});
+}
 
-// ── Excel Add-in: Register platform URL ─────────────────
-// Called by the Add-in Builder page on mount to store the platform origin.
-// This URL is used for all manifest generation so every path produces the correct URL.
-app.post("/make-server-f3f66941/addin/register-platform", async (c) => {
-  try {
-    const { taskpaneUrl } = await c.req.json();
-    if (!taskpaneUrl || typeof taskpaneUrl !== "string") {
-      return c.json({ error: "Missing required field: taskpaneUrl" }, 400);
+/* ─── Live Populate Workbook ─── */
+function populateLive() {
+  if(!generated||!cellData||!cellData.length){
+    showResult();return;
+  }
+  if(typeof Excel==='undefined'){
+    alert('Excel API not available. Open this inside Excel.');
+    showResult();return;
+  }
+
+  stepActive('sheets');
+  setProgress(35,'Creating sheets...');
+
+  // Group cells by sheet
+  var sheetGroups = {};
+  cellData.forEach(function(c){
+    if(!sheetGroups[c.sheet]) sheetGroups[c.sheet]=[];
+    sheetGroups[c.sheet].push(c);
+  });
+  var sheetNames = Object.keys(sheetGroups);
+  var totalCells = cellData.length;
+  var writtenCells = 0;
+  var currentSheetIdx = 0;
+
+  function processNextSheet() {
+    if(currentSheetIdx >= sheetNames.length){
+      // All sheets done - format
+      stepDone('cells');
+      stepActive('format');
+      setProgress(90,'Formatting...');
+      finishFormatting();
+      return;
     }
 
-    // Validate it looks like a URL
-    try { new URL(taskpaneUrl); } catch {
-      return c.json({ error: "Invalid URL format" }, 400);
-    }
+    var sheetName = sheetNames[currentSheetIdx];
+    var cells = sheetGroups[sheetName];
+    var pctBase = 35 + (currentSheetIdx/sheetNames.length)*50;
+    setProgress(pctBase, 'Writing: '+sheetName+'...');
+    document.getElementById('bpCells').textContent = writtenCells+' / '+totalCells+' cells';
 
-    // Store in KV for persistence across cold-starts
-    await kv.set("platform:taskpane-url", taskpaneUrl);
-    CACHED_PLATFORM_TASKPANE_URL = taskpaneUrl;
+    // Update step label
+    updateStepLabel('sheets','Creating: '+sheetName);
 
-    // Upload a correct manifest.xml to Supabase Storage (for IT admin org-wide deployment)
-    try {
-      const supabase = supabaseAdmin();
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const apiBase = `${supabaseUrl}/functions/v1/make-server-f3f66941`;
-      const manifestXml = generateManifestXml({ apiBaseUrl: apiBase, taskpaneUrl });
-      const manifestBlob = new Blob([manifestXml], { type: "application/xml" });
-      await supabase.storage
-        .from(ADDIN_PUBLIC_BUCKET)
-        .upload("manifest.xml", manifestBlob, { contentType: "application/xml", upsert: true });
-      const manifestPublicUrl = `${supabaseUrl}/storage/v1/object/public/${ADDIN_PUBLIC_BUCKET}/manifest.xml`;
-      console.log(`Updated manifest.xml in storage with platform URL: ${taskpaneUrl}`);
-      console.log(`Manifest public URL for IT admin: ${manifestPublicUrl}`);
-    } catch (storageErr) {
-      console.log(`Warning: failed to update manifest in storage (non-fatal): ${storageErr}`);
-    }
-
-    console.log(`Platform taskpane URL registered: ${taskpaneUrl}`);
-    return c.json({ success: true, taskpaneUrl });
-  } catch (err) {
-    console.log(`Error registering platform URL: ${err}`);
-    return c.json({ error: `Failed to register platform URL: ${err}` }, 500);
-  }
-});
-
-// ── Excel Add-in: Download ZIP Package ──────────────────
-app.get("/make-server-f3f66941/addin/download", async (c) => {
-  try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const apiBase = `${supabaseUrl}/functions/v1/make-server-f3f66941`;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-
-    const customTaskpaneUrl = c.req.query("taskpaneUrl");
-    const taskpaneUrl = customTaskpaneUrl || getTaskpaneUrl() || "https://emad-log.github.io/modelforge-addin/taskpane.html";
-
-    const html = generateAgentTaskpaneHtml(apiBase, anonKey);
-
-    // Build a Vercel-ready project structure inside the ZIP:
-    //   /public/taskpane.html   — the static file Vercel serves
-    //   /vercel.json            — routing & headers config
-    //   /manifest.xml           — sideload into Excel (top-level for easy access)
-    //   /serve.js               — fallback local dev server
-    //   /README.txt             — instructions
-    const zip = new JSZip();
-    zip.file("manifest.xml", generateManifestXml({ apiBaseUrl: apiBase, taskpaneUrl }));
-    zip.file("public/taskpane.html", html);
-    zip.file("public/index.html", html); // so root URL also works
-    zip.file("taskpane.html", html);     // top-level copy for local dev
-    zip.file("vercel.json", JSON.stringify({
-      headers: [
-        {
-          source: "/(.*)",
-          headers: [
-            { key: "Access-Control-Allow-Origin", value: "*" },
-            { key: "X-Frame-Options", value: "ALLOWALL" },
-            { key: "Content-Security-Policy", value: "frame-ancestors *" },
-          ],
-        },
-      ],
-    }, null, 2));
-    zip.file("README.txt", generateReadmeText(taskpaneUrl));
-    zip.file("serve.js", generateServeScript());
-
-    const content = await zip.generateAsync({ type: "uint8array" });
-
-    console.log(`Add-in ZIP generated: ${content.byteLength} bytes (taskpane: ${taskpaneUrl.substring(0, 80)}...)`);
-    return new Response(content, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/zip",
-        "Content-Disposition": "attachment; filename=ModelForge-Excel-Addin-v3.1.0.zip",
-        "Content-Length": String(content.byteLength),
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Expose-Headers": "Content-Disposition",
-      },
-    });
-  } catch (err) {
-    console.log(`Error generating add-in ZIP: ${err}`);
-    return c.json({ error: `Failed to generate add-in package: ${err}` }, 500);
-  }
-});
-
-// ── Excel Add-in: Download manifest.xml only ────────────
-app.get("/make-server-f3f66941/addin/manifest", (c) => {
-  try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const apiBase = `${supabaseUrl}/functions/v1/make-server-f3f66941`;
-    const customTaskpaneUrl = c.req.query("taskpaneUrl");
-    const taskpaneUrl = customTaskpaneUrl || getTaskpaneUrl() || "https://emad-log.github.io/modelforge-addin/taskpane.html";
-    const xml = generateManifestXml({ apiBaseUrl: apiBase, taskpaneUrl });
-    return new Response(xml, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/xml",
-        "Content-Disposition": "attachment; filename=manifest.xml",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Expose-Headers": "Content-Disposition",
-      },
-    });
-  } catch (err) {
-    console.log(`Error generating manifest: ${err}`);
-    return c.json({ error: `Failed to generate manifest: ${err}` }, 500);
-  }
-});
-
-// ── Excel Add-in: Serve taskpane HTML (for Office.js SourceLocation) ──
-app.get("/make-server-f3f66941/addin/taskpane", (c) => {
-  try {
-    const apiBase = `${Deno.env.get("SUPABASE_URL")}/functions/v1/make-server-f3f66941`;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    const html = generateAgentTaskpaneHtml(apiBase, anonKey);
-    return new Response(html, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
-  } catch (err) {
-    console.log(`Error serving taskpane: ${err}`);
-    return c.json({ error: `Failed to serve taskpane: ${err}` }, 500);
-  }
-});
-
-// ── AI Training: Upload model file ──────────────────────
-app.post("/make-server-f3f66941/ai/upload", async (c) => {
-  try {
-    const contentType = c.req.header("Content-Type") || "";
-
-    if (contentType.includes("multipart/form-data")) {
-      const body = await c.req.parseBody();
-      const file = body["file"];
-      if (!file || !(file instanceof File)) {
-        return c.json({ error: "No file provided. Include a 'file' field in multipart form data." }, 400);
-      }
-
-      const fileName = file.name || `upload-${Date.now()}.xlsx`;
-      const fileType = (body["type"] as string) || "LBO";
-      const storagePath = `uploads/${Date.now()}-${fileName}`;
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8 = new Uint8Array(arrayBuffer);
-
-      // Upload to Supabase Storage
-      const supabase = supabaseAdmin();
-      const { error: uploadError } = await supabase.storage
-        .from(TRAINING_BUCKET)
-        .upload(storagePath, uint8, {
-          contentType: file.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-
-      if (uploadError) {
-        console.log(`Storage upload error for ${fileName}: ${uploadError.message}`);
-        return c.json({ error: `File upload failed: ${uploadError.message}` }, 500);
-      }
-
-      // ── Real XLSX Parsing ─────────────────────────────
-      // Parse the actual Excel file to extract real structure
-      let parsedWorkbook = null;
-      let realPattern = null;
-      let parseError = null;
-      try {
-        parsedWorkbook = parseExcelBuffer(arrayBuffer, fileName, fileType);
-        console.log(`XLSX parsed: ${fileName} — ${parsedWorkbook.sheetCount} sheets, ${parsedWorkbook.totalFormulas} formulas, ${parsedWorkbook.totalCells} cells, detected type: ${parsedWorkbook.detectedType}`);
-      } catch (parseErr) {
-        parseError = String(parseErr);
-        console.log(`XLSX parse warning for ${fileName} (will fall back to template patterns): ${parseErr}`);
-      }
-
-      // Store metadata in KV
-      const uploadId = `training-model:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
-      const metadata: any = {
-        id: uploadId,
-        name: fileName,
-        type: fileType,
-        detectedType: parsedWorkbook?.detectedType || fileType,
-        size: file.size,
-        sizeFormatted: file.size > 1024 * 1024
-          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-          : `${(file.size / 1024).toFixed(0)} KB`,
-        storagePath,
-        status: "Processing",
-        uploadedAt: new Date().toISOString(),
-        parsed: !!parsedWorkbook,
-        sheetCount: parsedWorkbook?.sheetCount || 0,
-        totalFormulas: parsedWorkbook?.totalFormulas || 0,
-        totalCells: parsedWorkbook?.totalCells || 0,
-        sheetNames: parsedWorkbook?.sheets.map((s: any) => s.name) || [],
-      };
-
-      await kv.set(uploadId, metadata);
-
-      // Extract real patterns from parsed workbook, or fall back to template patterns
-      if (parsedWorkbook) {
-        try {
-          realPattern = await extractRealPatterns(uploadId, parsedWorkbook);
-          await kv.set(uploadId, { ...metadata, status: "Processed", processedAt: new Date().toISOString(), patternId: realPattern.id });
-          console.log(`Real training patterns extracted from ${fileName}: ${realPattern.id} (${parsedWorkbook.totalFormulas} formulas, ${parsedWorkbook.totalCells} cells)`);
-        } catch (patternErr) {
-          console.log(`Real pattern extraction failed for ${fileName}, falling back to template: ${patternErr}`);
-          // Fall back to template-based extraction immediately
-          try {
-            await kv.set(uploadId, { ...metadata, status: "Processed", processedAt: new Date().toISOString() });
-            await extractTrainingPatterns(uploadId, fileName, fileType);
-            console.log(`Fallback template patterns extracted for: ${fileName}`);
-          } catch (e) {
-            console.log(`Error in fallback pattern extraction: ${e}`);
-          }
-        }
+    Excel.run(function(ctx){
+      var wb = ctx.workbook;
+      var ws;
+      if(currentSheetIdx===0){
+        ws = wb.worksheets.getActiveWorksheet();
+        ws.name = sheetName;
       } else {
-        // No parse available — use template-based patterns
-        try {
-          await kv.set(uploadId, { ...metadata, status: "Processed", processedAt: new Date().toISOString() });
-          await extractTrainingPatterns(uploadId, fileName, fileType);
-          console.log(`Template patterns extracted for: ${fileName}`);
-        } catch (e) {
-          console.log(`Error updating training model status: ${e}`);
-        }
+        ws = wb.worksheets.add(sheetName);
       }
 
-      await logActivity({
-        action: parsedWorkbook
-          ? `uploaded & parsed for AI training (${parsedWorkbook.totalFormulas} formulas extracted)`
-          : "uploaded for AI training",
-        target: fileName,
-        user: "System",
+      // Write cells in batches
+      cells.forEach(function(cell){
+        var r = ws.getRange(cell.cell);
+        if(cell.value!=null) r.values=[[cell.value]];
+        if(cell.bold) r.format.font.bold=true;
+        if(cell.format==='currency') r.numberFormat=[['$#,##0']];
+        else if(cell.format==='percent') r.numberFormat=[['0.0%']];
+        else if(cell.format==='multiple') r.numberFormat=[['0.0"x"']];
       });
 
-      console.log(`Training model uploaded: ${fileName} (${metadata.sizeFormatted})`);
-      return c.json({
-        upload: metadata,
-        parsed: !!parsedWorkbook,
-        pattern: realPattern ? { id: realPattern.id, sheetCount: parsedWorkbook?.sheetCount, totalFormulas: parsedWorkbook?.totalFormulas } : null,
-        parseError,
+      // Activate this sheet so user can see it being built
+      ws.activate();
+
+      return ctx.sync();
+    })
+    .then(function(){
+      writtenCells += cells.length;
+      document.getElementById('bpCells').textContent = writtenCells+' / '+totalCells+' cells';
+      if(currentSheetIdx===0) stepDone('sheets');
+      if(currentSheetIdx===0) stepActive('cells');
+      currentSheetIdx++;
+      // Small delay so user can SEE each sheet being created
+      setTimeout(processNextSheet, 300);
+    })
+    .catch(function(err){
+      console.error('Sheet write error ('+sheetName+'):',err);
+      currentSheetIdx++;
+      setTimeout(processNextSheet, 100);
+    });
+  }
+
+  processNextSheet();
+}
+
+function finishFormatting() {
+  if(typeof Excel==='undefined'){showResult();return;}
+  Excel.run(function(ctx){
+    var sheets = ctx.workbook.worksheets;
+    sheets.load('items/name');
+    return ctx.sync().then(function(){
+      // Freeze panes on each sheet
+      sheets.items.forEach(function(ws){
+        try{ws.freezePanes.freezeRows(1);}catch(e){}
       });
-    }
-
-    return c.json({ error: "Expected multipart/form-data with a 'file' field" }, 400);
-  } catch (err) {
-    console.log(`Error uploading training model: ${err}`);
-    return c.json({ error: `Upload failed: ${err}` }, 500);
-  }
-});
-
-// ── AI Training: List uploaded models ───────────────────
-app.get("/make-server-f3f66941/ai/models", async (c) => {
-  try {
-    const models = await kv.getByPrefix("training-model:");
-    const sorted = models
-      .filter((m: any) => m && m.id)
-      .sort((a: any, b: any) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
-    return c.json({ models: sorted });
-  } catch (err) {
-    console.log(`Error listing training models: ${err}`);
-    return c.json({ error: `Failed to list training models: ${err}` }, 500);
-  }
-});
-
-// ── AI Training: Create training job ────────────────────
-// Training jobs in Path A (context-rich prompting) don't actually train a model —
-// they extract/consolidate patterns from selected uploaded files.
-// The job completes immediately since real parsing already happened at upload time.
-app.post("/make-server-f3f66941/ai/training-jobs", async (c) => {
-  try {
-    const { name, type, modelIds } = await c.req.json();
-    if (!name) {
-      return c.json({ error: "Missing required field: name" }, 400);
-    }
-
-    const jobId = `training-job:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
-
-    // Count how many patterns exist for the selected models
-    const patterns = await kv.getByPrefix("pattern:");
-    const relevantPatterns = patterns.filter((p: any) =>
-      p && p.id && (!type || p.modelType === type || p.detectedType === type)
-    );
-
-    const job = {
-      id: jobId,
-      name,
-      type: type || "LBO",
-      modelIds: modelIds || [],
-      modelsCount: (modelIds || []).length,
-      status: "complete",
-      progress: 100,
-      patternsConsolidated: relevantPatterns.length,
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-    };
-
-    await kv.set(jobId, job);
-    await logActivity({ action: `consolidated ${relevantPatterns.length} patterns for`, target: name, user: "AI Engine" });
-
-    console.log(`Training job created and completed: ${name} (${jobId}) — ${relevantPatterns.length} patterns consolidated`);
-    return c.json({ job });
-  } catch (err) {
-    console.log(`Error creating training job: ${err}`);
-    return c.json({ error: `Failed to create training job: ${err}` }, 500);
-  }
-});
-
-// ── AI Training: List training jobs ─────────────────────
-app.get("/make-server-f3f66941/ai/training-jobs", async (c) => {
-  try {
-    const jobs = await kv.getByPrefix("training-job:");
-    const sorted = jobs
-      .filter((j: any) => j && j.id)
-      .sort((a: any, b: any) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
-    return c.json({ jobs: sorted });
-  } catch (err) {
-    console.log(`Error listing training jobs: ${err}`);
-    return c.json({ error: `Failed to list training jobs: ${err}` }, 500);
-  }
-});
-
-// ── AI Training: Extract patterns from uploaded model ───
-app.post("/make-server-f3f66941/ai/extract-patterns", async (c) => {
-  try {
-    const { modelId, fileName, modelType } = await c.req.json();
-    if (!modelId || !fileName) {
-      return c.json({ error: "Missing required fields: modelId, fileName" }, 400);
-    }
-    const pattern = await extractTrainingPatterns(modelId, fileName, modelType || "LBO");
-    console.log(`Patterns extracted from ${fileName}: ${pattern.id}`);
-    return c.json({ pattern });
-  } catch (err) {
-    console.log(`Error extracting patterns: ${err}`);
-    return c.json({ error: `Failed to extract patterns: ${err}` }, 500);
-  }
-});
-
-// ── AI Training: Get training patterns ──────────────────
-app.get("/make-server-f3f66941/ai/patterns", async (c) => {
-  try {
-    const type = c.req.query("type");
-    const patterns = await getTrainingPatterns(type || undefined);
-    return c.json({ patterns, count: patterns.length });
-  } catch (err) {
-    console.log(`Error listing training patterns: ${err}`);
-    return c.json({ error: `Failed to list patterns: ${err}` }, 500);
-  }
-});
-
-// ── AI Training: Get available model types ──────────────
-app.get("/make-server-f3f66941/ai/model-types", (c) => {
-  return c.json({ types: getModelTypes() });
-});
-
-// ── AI Generation: Generate a financial model via OpenAI ─
-app.post("/make-server-f3f66941/ai/generate", async (c) => {
-  try {
-    const { prompt, modelType, companyName, industry, assumptions } = await c.req.json();
-    if (!prompt) {
-      return c.json({ error: "Missing required field: prompt" }, 400);
-    }
-
-    console.log(`AI model generation request: type=${modelType}, prompt="${prompt.substring(0, 80)}..."`);
-
-    const model = await generateFinancialModel({
-      prompt,
-      modelType: modelType || "LBO",
-      companyName,
-      industry,
-      assumptions,
+      // Go back to first sheet
+      if(sheets.items.length>0) sheets.items[0].activate();
+      return ctx.sync();
     });
+  })
+  .then(function(){
+    stepDone('format');
+    setProgress(100,'Complete!');
+    setTimeout(showResult, 400);
+  })
+  .catch(function(){
+    stepDone('format');
+    setProgress(100,'Complete!');
+    setTimeout(showResult, 400);
+  });
 
-    // Also get cell data for Excel injection
-    const cellData = modelToCellData(model);
-
-    await logActivity({
-      action: "generated AI model",
-      target: model.name,
-      user: "AI Engine",
-    });
-
-    console.log(`AI model generated: ${model.name} (${model.sheets.length} sheets, ${cellData.length} cells)`);
-    return c.json({ model, cellData });
-  } catch (err) {
-    console.log(`Error generating AI model: ${err}`);
-    return c.json({ error: `Model generation failed: ${err}` }, 500);
+  // Sync model to platform
+  if(generated && API_BASE){
+    fetch(API_BASE+"/models",{method:"POST",headers:AUTH,body:JSON.stringify({
+      id:generated.id||('ai-gen-'+Date.now()),name:generated.name,type:generated.type,
+      deal:'AI Generated',assumptions:generated.assumptions||{},status:'In Progress',
+      assignee:'AI',assigneeName:'AI Engine'
+    })}).catch(function(){});
   }
-});
+}
 
-// ── AI Generation: Get a previously generated model ─────
-app.get("/make-server-f3f66941/ai/generated/:id", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const model = await kv.get(id.startsWith("generated:") ? id : `generated:${id}`);
-    if (!model) {
-      return c.json({ error: `Generated model not found: ${id}` }, 404);
-    }
-    const cellData = modelToCellData(model);
-    return c.json({ model, cellData });
-  } catch (err) {
-    console.log(`Error getting generated model: ${err}`);
-    return c.json({ error: `Failed to get generated model: ${err}` }, 500);
-  }
-});
+function showResult() {
+  document.getElementById('buildProgress').classList.remove('active');
+  var rc = document.getElementById('resultCard');
+  rc.classList.add('active');
+  document.getElementById('rcTitle').textContent = generated.name||'Model Complete';
+  var sheets = generated.sheets||[];
+  document.getElementById('rcMeta').textContent = sheets.length+' sheets \u00b7 '+(cellData?cellData.length:0)+' cells \u00b7 '+(generated.metadata?generated.metadata.patternsUsed:0)+' training patterns';
+  var sl = document.getElementById('rcSheets');
+  sl.innerHTML = sheets.map(function(s){
+    return '<li>'+s.name+'<span class="sheet-rows">'+(s.rows?s.rows.length:0)+' rows</span></li>';
+  }).join('');
+  rc.scrollIntoView({behavior:'smooth',block:'center'});
+  document.getElementById('btnBuild').disabled=false;
+  document.getElementById('btnBuildText').textContent='Build in Excel';
+}
 
-// ── AI Generation: List generated models ────────────────
-app.get("/make-server-f3f66941/ai/generated", async (c) => {
-  try {
-    const models = await kv.getByPrefix("generated:");
-    const sorted = models
-      .filter((m: any) => m && m.id)
-      .sort((a: any, b: any) => new Date(b.metadata?.generatedAt || 0).getTime() - new Date(a.metadata?.generatedAt || 0).getTime());
-    return c.json({ models: sorted });
-  } catch (err) {
-    console.log(`Error listing generated models: ${err}`);
-    return c.json({ error: `Failed to list generated models: ${err}` }, 500);
-  }
-});
+function resetForm() {
+  document.getElementById('resultCard').classList.remove('active');
+  document.querySelectorAll('.quick-card').forEach(function(c){c.classList.remove('active')});
+  document.getElementById('fPrompt').value='';
+  document.getElementById('fCompany').value='';
+  document.getElementById('fIndustry').value='';
+  generated=null; cellData=null;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 
-// ── Excel AI Agent: Upload file for chat context ─────────
-// Accepts a file (XLSX, CSV, TXT, JSON, PDF), extracts content, returns text for AI context.
-app.post("/make-server-f3f66941/ai/agent/upload", async (c) => {
-  try {
-    const formData = await c.req.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) {
-      return c.json({ error: "No file provided" }, 400);
-    }
+/* ─── Progress Helpers ─── */
+function setProgress(pct,label) {
+  document.getElementById('bpBar').style.width=pct+'%';
+  document.getElementById('bpPct').textContent=Math.round(pct)+'%';
+  if(label) document.getElementById('bpTitle').innerHTML=(pct<100?'<div class="spinner"></div> ':'\u2713 ')+label;
+}
+function setSteps(steps) {
+  var ul = document.getElementById('bpSteps');
+  ul.innerHTML = steps.map(function(s){
+    var icon = s.status==='done'?'\u2713':(s.status==='active'?'\u25CF':'\u25CB');
+    return '<li class="bp-step '+s.status+'" id="step-'+s.id+'"><div class="step-icon">'+icon+'</div><span class="step-label">'+s.label+'</span></li>';
+  }).join('');
+}
+function stepDone(id){
+  var el=document.getElementById('step-'+id);
+  if(!el)return;
+  el.className='bp-step done';
+  el.querySelector('.step-icon').textContent='\u2713';
+}
+function stepActive(id){
+  var el=document.getElementById('step-'+id);
+  if(!el)return;
+  el.className='bp-step active';
+  el.querySelector('.step-icon').textContent='\u25CF';
+}
+function updateStepLabel(id,text){
+  var el=document.getElementById('step-'+id);
+  if(!el)return;
+  el.querySelector('.step-label').textContent=text;
+}
 
-    const fileName = file.name || "unknown";
-    const fileType = fileName.split(".").pop()?.toLowerCase() || "";
-    const fileSize = file.size;
-    console.log(`Agent file upload: ${fileName} (${fileType}, ${fileSize} bytes)`);
-
-    let extractedContent = "";
-    let metadata: Record<string, unknown> = { fileName, fileType, fileSize };
-
-    if (fileType === "xlsx" || fileType === "xls" || fileType === "xlsm") {
-      // Use existing XLSX parser
-      try {
-        const buffer = await file.arrayBuffer();
-        const parsed = parseExcelBuffer(buffer, fileName, "General");
-        if (parsed) {
-          const sheetNames = parsed.sheets.map((s: any) => s.name);
-          metadata.sheetNames = sheetNames;
-          metadata.totalSheets = parsed.sheetCount;
-
-          // Build a text summary of the workbook content
-          const lines: string[] = [];
-          lines.push(`=== Excel File: ${fileName} ===`);
-          lines.push(`Sheets: ${sheetNames.join(", ")}`);
-          lines.push(`Total formulas: ${parsed.totalFormulas}, Total cells: ${parsed.totalCells}`);
-          lines.push(`Detected type: ${parsed.detectedType || parsed.modelType}`);
-
-          for (const sheet of parsed.sheets) {
-            lines.push(`\n--- Sheet: ${sheet.name} (${sheet.rowCount} rows x ${sheet.colCount} cols) ---`);
-            if (sheet.headers && sheet.headers.length > 0) {
-              lines.push(`Headers: ${sheet.headers.join(", ")}`);
-            }
-            if (sheet.sections && sheet.sections.length > 0) {
-              lines.push(`Sections: ${sheet.sections.join(", ")}`);
-            }
-            // Assumptions
-            const assumptionEntries = Object.entries(sheet.assumptions || {});
-            if (assumptionEntries.length > 0) {
-              lines.push(`Assumptions:`);
-              for (const [key, info] of assumptionEntries.slice(0, 20)) {
-                const a = info as any;
-                lines.push(`  ${a.cell || ""}: ${key} = ${a.value}${a.format ? " (" + a.format + ")" : ""}`);
-              }
-            }
-            // Sample data
-            if (sheet.sampleData && sheet.sampleData.length > 0) {
-              lines.push(`Sample data:`);
-              for (const sd of sheet.sampleData.slice(0, 30)) {
-                lines.push(`  ${sd.cell}: ${sd.value}${sd.bold ? " [bold]" : ""}`);
-              }
-            }
-            // Formulas
-            if (sheet.formulas && sheet.formulas.length > 0) {
-              lines.push(`Key formulas:`);
-              for (const f of sheet.formulas.slice(0, 20)) {
-                lines.push(`  ${f.cell}: ${f.formula}`);
-              }
-            }
-          }
-
-          extractedContent = lines.join("\n");
-        } else {
-          extractedContent = `[Could not parse Excel file: ${fileName}]`;
-        }
-      } catch (parseErr) {
-        console.log(`XLSX parse error: ${parseErr}`);
-        extractedContent = `[Error parsing Excel file: ${parseErr}]`;
-      }
-    } else if (fileType === "csv") {
-      extractedContent = await file.text();
-      // Truncate if very large
-      if (extractedContent.length > 50000) {
-        extractedContent = extractedContent.substring(0, 50000) + "\n... (truncated)";
-      }
-      extractedContent = `=== CSV File: ${fileName} ===\n${extractedContent}`;
-    } else if (fileType === "json") {
-      const raw = await file.text();
-      try {
-        const parsed = JSON.parse(raw);
-        extractedContent = `=== JSON File: ${fileName} ===\n${JSON.stringify(parsed, null, 2).substring(0, 50000)}`;
-      } catch {
-        extractedContent = `=== JSON File: ${fileName} ===\n${raw.substring(0, 50000)}`;
-      }
-    } else if (fileType === "txt" || fileType === "md" || fileType === "tsv") {
-      const raw = await file.text();
-      extractedContent = `=== Text File: ${fileName} ===\n${raw.substring(0, 50000)}`;
+/* ─── Training Status ─── */
+function loadTraining() {
+  if(!API_BASE)return;
+  fetch(API_BASE+"/ai/patterns",{headers:AUTH})
+  .then(function(r){return r.json()})
+  .then(function(data){
+    var count=data.count||0;
+    var strip=document.getElementById('trainingStrip');
+    var badge=document.getElementById('tsBadge');
+    var text=document.getElementById('tsText');
+    if(count>0){
+      strip.className='training-strip ts-ok';
+      badge.textContent=count+' pattern'+(count>1?'s':'');
+      text.textContent='AI uses your uploaded Excel patterns as context';
     } else {
-      // Unsupported type — try reading as text
-      try {
-        const raw = await file.text();
-        extractedContent = `=== File: ${fileName} ===\n${raw.substring(0, 30000)}`;
-      } catch {
-        extractedContent = `[Unsupported file type: ${fileType}. Could not extract content from ${fileName}]`;
-      }
+      strip.className='training-strip ts-warn';
+      badge.textContent='No patterns';
+      text.textContent='Upload models on the web platform to train AI';
     }
+  })
+  .catch(function(){
+    document.getElementById('tsBadge').textContent='Offline';
+    document.getElementById('tsText').textContent='Could not reach platform';
+    document.getElementById('trainingStrip').className='training-strip ts-warn';
+  });
+}
 
-    return c.json({
-      success: true,
-      fileName,
-      fileType,
-      fileSize,
-      extractedContent,
-      metadata,
-    });
-  } catch (err) {
-    console.log(`Agent file upload error: ${err}`);
-    return c.json({ error: `File upload failed: ${err}` }, 500);
+/* ─── Connection Check ─── */
+function checkConnection() {
+  if(!API_BASE){
+    document.getElementById('statusText').textContent='No API';
+    document.getElementById('statusPill').style.color='var(--amber)';
+    return;
   }
-});
-
-// ── Excel AI Agent: Get conversation messages ────────────
-// Returns the messages for a specific session so the taskpane can restore chat history.
-app.get("/make-server-f3f66941/ai/agent/sessions/:id", async (c) => {
-  try {
-    const sessionId = c.req.param("id");
-    const session = await kv.get(`agent-session:${sessionId}`);
-    if (!session) {
-      return c.json({ error: `Session not found: ${sessionId}` }, 404);
+  fetch(API_BASE+"/health",{headers:AUTH})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.status==='ok'){
+      document.getElementById('statusText').textContent='Connected';
+      document.getElementById('statusPill').style.color='var(--green)';
+      document.getElementById('statusPill').style.background='rgba(16,185,129,.1)';
     }
-    const s = session as any;
-    // Return a cleaned version of messages (skip system prompt, simplify tool calls)
-    const messages = (s.messages || [])
-      .filter((m: any) => m.role !== "system")
-      .map((m: any) => ({
-        role: m.role,
-        content: m.content,
-        tool_calls: m.tool_calls?.map((tc: any) => ({
-          id: tc.id,
-          name: tc.function?.name,
-          arguments: tc.function?.arguments,
-        })),
-        tool_call_id: m.tool_call_id,
-      }));
+  })
+  .catch(function(){
+    document.getElementById('statusText').textContent='Offline';
+    document.getElementById('statusPill').style.color='var(--red)';
+    document.getElementById('statusPill').style.background='rgba(239,68,68,.1)';
+    document.querySelector('.status-dot').style.animation='none';
+  });
+}
 
-    return c.json({
-      id: s.id,
-      messages,
-      modelType: s.modelType,
-      createdAt: s.createdAt,
-      lastActiveAt: s.lastActiveAt,
-    });
-  } catch (err) {
-    console.log(`Error getting session ${c.req.param("id")}: ${err}`);
-    return c.json({ error: `Failed to get session: ${err}` }, 500);
-  }
+/* ─── Office.js Init ─── */
+Office.onReady(function(info){
+  console.log('[MF] Office.onReady, host='+info.host);
+  document.getElementById('loading').style.display='none';
+  document.getElementById('app').style.display='block';
+  checkConnection();
+  loadTraining();
 });
 
-// ── Excel AI Agent: Delete a session ─────────────────────
-app.delete("/make-server-f3f66941/ai/agent/sessions/:id", async (c) => {
-  try {
-    const sessionId = c.req.param("id");
-    await kv.del(`agent-session:${sessionId}`);
-    console.log(`Agent session deleted: ${sessionId}`);
-    return c.json({ success: true });
-  } catch (err) {
-    console.log(`Error deleting session ${c.req.param("id")}: ${err}`);
-    return c.json({ error: `Failed to delete session: ${err}` }, 500);
+// Fallback for browser testing
+setTimeout(function(){
+  if(document.getElementById('loading').style.display!=='none'){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('statusText').textContent='Browser Mode';
+    document.getElementById('statusPill').style.color='var(--amber)';
+    document.getElementById('statusPill').style.background='rgba(245,158,11,.1)';
+    checkConnection();
+    loadTraining();
   }
-});
-
-// ── Excel AI Agent: Start or continue agent conversation ──
-// This is the core agent loop. The taskpane sends workbook context + user prompt,
-// server calls OpenAI with tool definitions, returns tool_calls for local execution.
-app.post("/make-server-f3f66941/ai/agent", async (c) => {
-  try {
-    const { sessionId, workbookContext, prompt, modelType } = await c.req.json();
-    if (!prompt) {
-      return c.json({ error: "Missing required field: prompt" }, 400);
-    }
-
-    console.log(`Agent request: session=${sessionId || "new"}, prompt="${prompt.substring(0, 80)}..."`);
-
-    const result = await runAgentStep(
-      sessionId || `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      workbookContext || null,
-      prompt,
-      null, // no tool results on initial call
-      modelType,
-    );
-
-    return c.json(result);
-  } catch (err) {
-    console.log(`Agent error: ${err}`);
-    return c.json({ type: "error", error: `Agent failed: ${err}`, sessionId: "" }, 500);
-  }
-});
-
-// ── Excel AI Agent: Continue after tool execution ────────
-// Taskpane executed tools locally, sends results back for the next agent step.
-app.post("/make-server-f3f66941/ai/agent/continue", async (c) => {
-  try {
-    const { sessionId, toolResults } = await c.req.json();
-    if (!sessionId) {
-      return c.json({ error: "Missing required field: sessionId" }, 400);
-    }
-    if (!toolResults || !toolResults.length) {
-      return c.json({ error: "Missing required field: toolResults" }, 400);
-    }
-
-    console.log(`Agent continue: session=${sessionId}, ${toolResults.length} tool result(s)`);
-
-    const result = await runAgentStep(
-      sessionId,
-      null, // no new workbook context on continue
-      null, // no new prompt
-      toolResults,
-    );
-
-    return c.json(result);
-  } catch (err) {
-    console.log(`Agent continue error: ${err}`);
-    return c.json({ type: "error", error: `Agent continue failed: ${err}`, sessionId: "" }, 500);
-  }
-});
-
-// ── Excel AI Agent: List sessions ────────────────────────
-app.get("/make-server-f3f66941/ai/agent/sessions", async (c) => {
-  try {
-    const sessions = await kv.getByPrefix("agent-session:");
-    const sorted = sessions
-      .filter((s: any) => s && s.id)
-      .sort((a: any, b: any) => new Date(b.lastActiveAt || 0).getTime() - new Date(a.lastActiveAt || 0).getTime())
-      .slice(0, 20)
-      .map((s: any) => ({
-        id: s.id,
-        messageCount: s.messages?.length || 0,
-        modelType: s.modelType,
-        createdAt: s.createdAt,
-        lastActiveAt: s.lastActiveAt,
-      }));
-    return c.json({ sessions: sorted });
-  } catch (err) {
-    console.log(`Error listing agent sessions: ${err}`);
-    return c.json({ error: `Failed to list sessions: ${err}` }, 500);
-  }
-});
-
-Deno.serve(app.fetch);
+},4000);
+</script>
+</body>
+</html>
